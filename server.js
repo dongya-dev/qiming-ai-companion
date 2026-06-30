@@ -13,7 +13,8 @@ const DEEPSEEK_URL = 'https://api.deepseek.com/v1/chat/completions';
 // ---------- middleware ----------
 app.use(cors());
 app.use(express.json({ limit: '5mb' }));
-app.use(express.static(__dirname));
+// 访问根路径自动跳转到登录页
+app.get('/', (req, res) => res.redirect('/login.html'));
 
 // ---------- helpers ----------
 
@@ -1060,6 +1061,9 @@ app.get('/api/health', (_req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+// ---------- static files ----------
+app.use(express.static(__dirname));
 
 // ---------- start ----------
 app.listen(PORT, () => {

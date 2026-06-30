@@ -380,15 +380,15 @@ function loginSuccess(username, role, isGuest=false, token=''){
 // ===================== Init =====================
 updateRoleUI();
 
-// Check if already logged in
+// 已登录则自动跳转到主页
 (function(){
   try{
     const s = JSON.parse(localStorage.getItem('qm_session'));
     if(s && s.username && s.loginAt){
       const age = Date.now() - new Date(s.loginAt).getTime();
       if(age < 86400000){
-        document.getElementById('login-username').value = s.username;
-        showMsg('检测到上次登录，欢迎回来！','info');
+        window.location.replace('index.html');
+        return;
       }
     }
   }catch(e){}

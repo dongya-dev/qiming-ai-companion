@@ -3345,6 +3345,18 @@ if ('speechSynthesis' in window) {
   speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
 }
 document.addEventListener('DOMContentLoaded', async () => {
+  // Session guard: redirect to login if not authenticated
+  try {
+    const sess = JSON.parse(localStorage.getItem('qm_session'));
+    if (!sess || !sess.username) {
+      window.location.replace('login.html');
+      return;
+    }
+  } catch(e) {
+    window.location.replace('login.html');
+    return;
+  }
+
   await DataLayer.init();
   loadA11y();
   loadFontMode();
