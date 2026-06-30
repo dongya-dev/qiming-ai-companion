@@ -1,0 +1,3351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>启明 · AI学习伴侣</title>
+<script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3.24.0/dist/index.js"></script>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<style>
+/* ===== OpenDyslexic Font ===== */
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/fonts/OpenDyslexic-Regular.otf') format('opentype');
+  font-weight: normal; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/fonts/OpenDyslexic-Bold.otf') format('opentype');
+  font-weight: bold; font-style: normal; font-display: swap;
+}
+body.font-dyslexic, body.font-dyslexic * {
+  font-family: 'OpenDyslexic', 'PingFang SC', 'Microsoft YaHei', sans-serif !important;
+}
+body.font-dyslexic .pom-display, body.font-dyslexic .fc-kb { font-family: 'OpenDyslexic', monospace !important; }
+<style>
+/* ===== DESIGN TOKENS ===== */
+:root {
+  --pri: #F26722;
+  --pri-h: #E0590E;
+  --pri-s: #FFF6F0;
+  --sec: #6366F1;
+  --sec-s: #EEF2FF;
+  --ok: #10B981;
+  --ok-s: #ECFDF5;
+  --warn: #F59E0B;
+  --warn-s: #FFFBEB;
+  --err: #EF4444;
+  --err-s: #FEF2F2;
+  --bg: #F6F5F2;
+  --surf: #FFFFFF;
+  --surf2: #FAFAF8;
+  --line: #EBE8E2;
+  --line2: #DEDBD4;
+  --tx: #1E293B;
+  --tx2: #64748B;
+  --tx3: #94A3B8;
+  --r: 18px;
+  --rs: 12px;
+  --rx: 8px;
+  --sh: 0 1px 2px rgba(0,0,0,.03), 0 4px 16px rgba(0,0,0,.04);
+  --shl: 0 2px 4px rgba(0,0,0,.02), 0 8px 32px rgba(0,0,0,.06);
+  --shx: 0 4px 8px rgba(242,103,34,.12), 0 2px 20px rgba(242,103,34,.08);
+}
+
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { font-size:16px; scroll-behavior:smooth; }
+body {
+  font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", -apple-system, system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--tx);
+  line-height:1.75;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  font-size:.975rem;
+}
+
+/* ===== SUBTLE BACKGROUND TEXTURE ===== */
+body::before {
+  content:'';
+  position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(ellipse 800px 600px at 15% 10%, rgba(242,103,34,.025) 0%, transparent 60%),
+    radial-gradient(ellipse 600px 500px at 80% 55%, rgba(99,102,241,.02) 0%, transparent 60%),
+    radial-gradient(ellipse 700px 500px at 45% 85%, rgba(16,185,129,.015) 0%, transparent 60%);
+}
+
+/* ===== CONNECTION BANNER ===== */
+.conn-banner {
+  display:none; text-align:center; padding:10px 24px; font-size:.82rem; font-weight:600;
+  animation: fadeIn .35s ease; position:relative; z-index:10;
+}
+.conn-banner.err { display:block; background:var(--err-s); color:#991B1B; border-bottom:1px solid #FECACA; }
+.conn-banner.ok  { display:block; background:var(--ok-s); color:#065F46; border-bottom:1px solid #A7F3D0; }
+
+/* ===== HEADER ===== */
+.hdr {
+  background: linear-gradient(165deg, #F26722 0%, #F5793D 35%, #F59059 65%, #F6A676 100%);
+  padding:44px 32px 32px; text-align:center; position:relative; overflow:hidden; z-index:1;
+}
+.hdr::before {
+  content:''; position:absolute; top:-60%; right:-15%;
+  width:420px; height:420px; border-radius:50%;
+  background:radial-gradient(circle, rgba(255,255,255,.1) 0%, transparent 65%);
+}
+.hdr::after {
+  content:''; position:absolute; bottom:-50%; left:-10%;
+  width:340px; height:340px; border-radius:50%;
+  background:radial-gradient(circle, rgba(255,255,255,.06) 0%, transparent 65%);
+}
+.hdr h1 {
+  font-size:2rem; font-weight:800; letter-spacing:.5px; position:relative; z-index:1;
+  color:#fff; text-shadow:0 2px 12px rgba(0,0,0,.06);
+}
+.hdr .sub { font-size:.95rem; color:rgba(255,255,255,.88); margin-top:8px; position:relative; z-index:1; font-weight:400; }
+.hdr .tags { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:18px; position:relative; z-index:1; }
+.hdr .tags span {
+  padding:7px 18px; border-radius:99px; background:rgba(255,255,255,.16);
+  backdrop-filter:blur(8px); font-size:.78rem; font-weight:500; color:#fff;
+}
+.hdr .tags span.ai { background:rgba(255,255,255,.24); font-weight:600; }
+
+/* ===== TOOLBAR ===== */
+.bar {
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  padding:8px 20px; background:var(--surf); border-bottom:1px solid var(--line);
+  position:sticky; top:0; z-index:50; backdrop-filter:blur(12px);
+  background:rgba(255,255,255,.82);
+}
+.bar button {
+  padding:6px 14px; border-radius:99px; border:1.5px solid var(--line);
+  background:var(--surf); cursor:pointer; font-size:.78rem; font-family:inherit;
+  color:var(--tx2); font-weight:500; transition:all .2s;
+}
+.bar button:hover { border-color:var(--pri); color:var(--pri); background:var(--pri-s); }
+.bar .sep { width:1px; height:22px; background:var(--line); margin:0 6px; }
+.bar .fs { font-size:.78rem; color:var(--pri); font-weight:700; min-width:32px; text-align:center; }
+.bar .status-dot { width:8px; height:8px; border-radius:50%; margin-right:4px; display:inline-block; }
+.bar .status-dot.on { background:var(--ok); box-shadow:0 0 6px rgba(16,185,129,.4); }
+.bar .status-dot.off { background:var(--err); }
+
+/* ===== CONTAINER ===== */
+.wrap { max-width:1040px; margin:0 auto; padding:28px 24px 48px; position:relative; z-index:1; }
+
+/* ===== TABS ===== */
+.tabs { display:flex; gap:4px; margin-bottom:32px; justify-content:center; flex-wrap:wrap; }
+.tab {
+  padding:10px 22px; border-radius:99px; font-size:.88rem; font-weight:600; cursor:pointer;
+  border:2px solid transparent; background:var(--surf); color:var(--tx2);
+  transition:all .22s cubic-bezier(.4,0,.2,1); user-select:none;
+  display:flex; align-items:center; gap:7px;
+  box-shadow:0 1px 3px rgba(0,0,0,.03);
+}
+.tab:hover { background:var(--pri-s); color:var(--pri); border-color:var(--pri-s); transform:translateY(-1px); }
+.tab.on { background:linear-gradient(150deg, var(--pri) 0%, var(--pri-h) 100%); color:#fff; border-color:transparent; box-shadow:var(--shx); }
+.tab .ic { font-size:1.05rem; }
+.tab .b {
+  font-size:.64rem; background:rgba(255,255,255,.22); padding:2px 7px; border-radius:99px;
+  margin-left:-1px; font-weight:500;
+}
+.tab.on .b { background:rgba(255,255,255,.30); }
+
+/* ===== PANEL ===== */
+.panel { display:none; animation:fadeUp .4s ease; }
+.panel.on { display:block; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(12px);} to{opacity:1;transform:translateY(0);} }
+@keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+
+/* ===== CARD ===== */
+.card {
+  background:var(--surf); border-radius:var(--r); padding:30px; margin-bottom:22px;
+  box-shadow:var(--sh); border:1px solid var(--line);
+  transition:box-shadow .3s, border-color .3s;
+}
+.card:hover { border-color:var(--line2); box-shadow:var(--shl); }
+.card-hd {
+  font-size:1.08rem; font-weight:700; margin-bottom:20px; display:flex; align-items:center; gap:10px;
+  color:var(--tx); padding-bottom:14px; border-bottom:1.5px solid var(--line);
+}
+
+/* ===== TIP ===== */
+.tip {
+  background:var(--pri-s); border:1px solid #FED7C4; border-radius:var(--rs);
+  padding:14px 20px; margin-bottom:20px; font-size:.88rem; color:#9A3400; line-height:1.65;
+}
+.tip strong { color:var(--pri); }
+
+/* ===== TEXTAREA ===== */
+textarea {
+  width:100%; min-height:150px; padding:18px 20px; border:2px solid var(--line);
+  border-radius:var(--rs); font-size:.98rem; font-family:inherit; line-height:1.85;
+  resize:vertical; background:var(--surf2); color:var(--tx);
+  transition:border-color .25s, box-shadow .25s, background .25s;
+}
+textarea:focus { outline:none; border-color:var(--pri); box-shadow:0 0 0 4px rgba(242,103,34,.08); background:#fff; }
+textarea::placeholder { color:var(--tx3); }
+
+/* ===== BUTTONS ===== */
+.btn {
+  display:inline-flex; align-items:center; gap:8px; padding:11px 26px; border-radius:99px;
+  font-size:.93rem; font-weight:600; cursor:pointer; border:none;
+  transition:all .22s cubic-bezier(.4,0,.2,1); font-family:inherit; letter-spacing:.2px;
+}
+.btn:disabled { opacity:.5; cursor:not-allowed; transform:none!important; filter:none!important; box-shadow:none!important; }
+.btn-pri { background:linear-gradient(150deg, var(--pri) 0%, var(--pri-h) 100%); color:#fff; box-shadow:0 4px 14px rgba(242,103,34,.25); }
+.btn-pri:hover { filter:brightness(1.06); transform:translateY(-2px); box-shadow:0 6px 22px rgba(242,103,34,.35); }
+.btn-pri:active { transform:translateY(0); }
+.btn-sec { background:var(--surf); color:var(--pri); border:2px solid #FED7C4; }
+.btn-sec:hover { background:var(--pri-s); transform:translateY(-1px); border-color:var(--pri); }
+.btn-suc { background:linear-gradient(150deg, var(--ok) 0%, #059669 100%); color:#fff; box-shadow:0 4px 14px rgba(16,185,129,.25); }
+.btn-suc:hover { filter:brightness(1.06); transform:translateY(-2px); }
+.btn-pur { background:linear-gradient(150deg, var(--sec) 0%, #4F46E5 100%); color:#fff; box-shadow:0 4px 14px rgba(99,102,241,.25); }
+.btn-pur:hover { filter:brightness(1.06); transform:translateY(-2px); }
+.btn-sm { padding:7px 18px; font-size:.82rem; }
+.btn-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
+
+/* ===== TAGS ===== */
+.tag {
+  display:inline-block; padding:4px 14px; border-radius:99px; font-size:.77rem; font-weight:600;
+}
+.tag-pri { background:var(--pri-s); color:var(--pri); }
+.tag-ok { background:var(--ok-s); color:#065F46; }
+.tag-pur { background:var(--sec-s); color:var(--sec); }
+
+/* ===== GRID ===== */
+.col2 { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+@media (max-width:768px) { .col2 { grid-template-columns:1fr; } }
+
+/* ===== SIMPLIFIED TEXT ===== */
+.stx {
+  padding:24px; background:var(--surf2); border-radius:var(--rs);
+  border:1px solid var(--line); font-size:1.05rem; line-height:2.1; min-height:90px;
+}
+.stx-sen {
+  display:block; margin-bottom:10px; padding:14px 18px; border-radius:var(--rx);
+  background:var(--surf); border-left:3px solid var(--pri);
+  transition:all .22s; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,.02);
+}
+.stx-sen:hover { background:var(--pri-s); border-left-color:var(--pri-h); transform:translateX(3px); box-shadow:var(--sh); }
+.stx-sen .py { color:var(--tx2); font-size:.8rem; display:block; line-height:1.5; margin-bottom:2px; letter-spacing:.5px; }
+.stx-sen .py.fb { color:var(--tx3); font-style:italic; font-size:.74rem; }
+.stx-sen.speaking { background:var(--pri-s); border-left-color:var(--pri-h); transform:scale(1.02); box-shadow:0 0 0 3px rgba(242,103,34,.15); z-index:2; position:relative; }
+body.dark .stx-sen.speaking { background:rgba(242,103,34,.12)!important; box-shadow:0 0 0 3px rgba(242,103,34,.25); }
+body.hc .stx-sen.speaking { background:#333!important; border-left-color:#FFD700!important; box-shadow:0 0 0 3px rgba(255,215,0,.35); }
+
+/* ===== HORIZONTAL MINDMAP ===== */
+.mm-h-wrap {
+  overflow-x:auto; overflow-y:visible; padding:20px 8px 10px;
+  -webkit-overflow-scrolling:touch; scroll-behavior:smooth;
+}
+.mm-h-wrap::-webkit-scrollbar { height:6px; }
+.mm-h-wrap::-webkit-scrollbar-thumb { background:var(--line2); border-radius:99px; }
+/* Scroll gradient indicators */
+.mm-h-wrap { position:relative; }
+.mm-h-wrap::before, .mm-h-wrap::after {
+  content:''; position:absolute; top:0; bottom:0; width:28px; z-index:3; pointer-events:none;
+  transition:opacity .3s; opacity:0;
+}
+.mm-h-wrap::before { left:0; background:linear-gradient(to right, rgba(255,255,255,.92) 0%, transparent 100%); }
+.mm-h-wrap::after  { right:0; background:linear-gradient(to left, rgba(255,255,255,.92) 0%, transparent 100%); }
+.mm-h-wrap.has-scroll-right::after { opacity:1; }
+.mm-h-wrap.has-scroll-left::before { opacity:1; }
+.mm-h { display:flex; gap:0; align-items:stretch; min-width:fit-content; }
+/* Column containers */
+.mm-root-col {
+  flex-shrink:0; width:130px; display:flex; align-items:center; justify-content:center;
+  padding:8px 0; position:relative; z-index:2;
+}
+.mm-root-card {
+  background:linear-gradient(150deg, #F26722, #F5793D);
+  color:#fff; padding:18px 22px; border-radius:var(--r); text-align:center;
+  font-weight:800; font-size:1.05rem; box-shadow:0 6px 22px rgba(242,103,34,.22);
+  word-break:break-all; max-width:130px; cursor:default; user-select:none;
+}
+/* Arrow from root to branches */
+.mm-arrow-col {
+  flex-shrink:0; width:36px; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; position:relative;
+}
+.mm-arrow-col::before {
+  content:''; position:absolute; top:15%; bottom:15%; left:50%;
+  width:2px; background:var(--line2); border-radius:1px;
+}
+.mm-arrow-col::after {
+  content:'▶'; position:absolute; right:4px; top:50%; transform:translateY(-50%);
+  font-size:9px; color:var(--tx3);
+}
+/* Branch column */
+.mm-branch-col {
+  flex-shrink:0; width:140px; display:flex; flex-direction:column;
+  gap:12px; justify-content:center; padding:12px 0;
+}
+.mm-branch-node {
+  padding:11px 16px; border-radius:var(--rx); font-weight:700; font-size:.88rem;
+  cursor:pointer; transition:all .22s; text-align:center;
+  border:1.5px solid transparent; box-shadow:0 2px 8px rgba(0,0,0,.03);
+  user-select:none; position:relative;
+}
+.mm-branch-node:hover { transform:translateX(3px); box-shadow:0 4px 14px rgba(0,0,0,.07); }
+.mm-branch-node.mm-active { transform:translateX(6px); box-shadow:0 4px 16px rgba(0,0,0,.1); border-width:2.5px; }
+.mm-branch-node .mm-b-count {
+  display:block; font-size:.66rem; font-weight:400; opacity:.6; margin-top:2px;
+}
+/* Arrow from branches to leaves */
+.mm-arrow2 {
+  flex-shrink:0; width:30px; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; position:relative;
+}
+.mm-arrow2::after {
+  content:'▶'; position:absolute; right:4px; top:50%; transform:translateY(-50%);
+  font-size:8px; color:var(--tx3);
+}
+/* Leaf column */
+.mm-leaf-col {
+  flex-shrink:0; display:flex; flex-direction:column;
+  gap:12px; justify-content:center; padding:12px 0; min-width:160px;
+}
+.mm-leaf-group {
+  display:flex; flex-direction:column; gap:4px;
+}
+.mm-leaf-chip {
+  display:inline-flex; align-items:center; gap:5px; padding:6px 12px;
+  border-radius:99px; font-size:.8rem; transition:all .2s;
+  background:rgba(255,255,255,.6); border:1px solid rgba(0,0,0,.05);
+  white-space:nowrap;
+}
+.mm-leaf-chip:hover { background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.05); transform:translateX(2px); }
+.mm-leaf-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+.mm-source {
+  font-size:.7rem; color:var(--tx3); margin-top:10px; text-align:center;
+  font-style:italic; padding:0 8px;
+}
+
+/* ===== TASK ===== */
+.task-list { list-style:none; }
+.task-item {
+  display:flex; align-items:center; gap:14px; padding:16px 18px; margin-bottom:8px;
+  background:var(--surf2); border-radius:var(--rs); border:1px solid var(--line);
+  transition:all .22s; font-size:1rem;
+}
+.task-item:hover { border-color:var(--pri); background:var(--surf); box-shadow:var(--sh); transform:translateX(3px); }
+.task-item.done { background:var(--ok-s); border-color:var(--ok); opacity:.88; }
+.task-item.done .task-tx { text-decoration:line-through; color:var(--tx2); }
+.task-cb {
+  width:30px; height:30px; border-radius:50%; border:2.5px solid var(--pri);
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition:all .22s; flex-shrink:0; font-size:.8rem;
+  color:transparent; user-select:none; font-weight:700;
+}
+.task-cb:hover { transform:scale(1.12); border-color:var(--pri-h); }
+.task-cb.chk { background:var(--ok); border-color:var(--ok); color:#fff; box-shadow:0 2px 6px rgba(16,185,129,.25); }
+.task-step { color:var(--pri); font-weight:700; margin-right:6px; min-width:2.4em; font-size:.92rem; }
+.task-enc { display:block; font-size:.76rem; color:var(--sec); margin-top:2px; font-weight:500; }
+
+/* ===== PROGRESS ===== */
+.pbar { height:8px; background:var(--line); border-radius:99px; overflow:hidden; margin:14px 0; }
+.pfill { height:100%; background:linear-gradient(90deg, var(--ok), #34D399); border-radius:99px; transition:width .45s cubic-bezier(.4,0,.2,1); box-shadow:0 2px 6px rgba(16,185,129,.2); }
+.plbl { text-align:center; font-weight:600; color:var(--tx2); font-size:.88rem; }
+
+/* ===== CELEBRATION ===== */
+.cele { text-align:center; padding:40px 20px; display:none; }
+.cele.show { display:block; animation:fadeIn .5s ease; }
+.cele .emoji { font-size:3.5rem; animation:bounce .6s ease infinite alternate; }
+.cele .msg { font-size:1.2rem; font-weight:700; color:var(--ok); margin-top:10px; }
+@keyframes bounce { from{transform:translateY(0);} to{transform:translateY(-10px);} }
+
+.confetti-box { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:999; }
+.confetti-p {
+  position:absolute; width:10px; height:10px; border-radius:3px;
+  animation:confFall 1.5s ease-out forwards;
+}
+@keyframes confFall { 0%{transform:translateY(-100px) rotate(0deg);opacity:1;} 100%{transform:translateY(100vh) rotate(720deg);opacity:0;} }
+
+/* ===== LOADING / ERROR ===== */
+.dots { display:flex; align-items:center; gap:8px; padding:16px 0; color:var(--tx2); font-size:.9rem; }
+.dots span { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--pri); animation:dotPulse 1.4s infinite ease-in-out both; margin:0 2px; }
+.dots span:nth-child(1) { animation-delay:-.32s; }
+.dots span:nth-child(2) { animation-delay:-.16s; }
+@keyframes dotPulse { 0%,80%,100%{transform:scale(0);} 40%{transform:scale(1);} }
+
+.err-box { background:var(--err-s); border:1px solid #FECACA; border-radius:var(--rs); padding:14px 18px; color:#991B1B; font-size:.9rem; display:none; position:relative; }
+.err-box.show { display:flex; align-items:flex-start; gap:10px; }
+.err-box .err-msg { flex:1; }
+.err-box .retry { color:var(--pri); cursor:pointer; text-decoration:underline; margin-left:6px; }
+.err-box .err-close { background:none; border:none; color:inherit; font-size:1.1rem; cursor:pointer; padding:0 4px; line-height:1; opacity:.6; flex-shrink:0; }
+.err-box .err-close:hover { opacity:1; }
+
+/* ===== STATS ===== */
+.stats { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+.stat { background:var(--surf2); padding:10px 18px; border-radius:var(--rx); border:1px solid var(--line); font-size:.82rem; transition:all .2s; }
+.stat:hover { box-shadow:var(--sh); border-color:var(--line2); }
+.stat strong { color:var(--pri); font-size:1.1rem; }
+
+/* ===== POMODORO ===== */
+.pom {
+  display:inline-flex; align-items:center; gap:6px; padding:7px 15px; border-radius:99px;
+  font-size:.82rem; font-weight:600; cursor:pointer; transition:all .2s; font-family:inherit; border:1.5px solid transparent;
+}
+.pom.idle { background:var(--pri-s); color:var(--pri); border-color:transparent; }
+.pom.run { background:var(--ok-s); color:#059669; border-color:var(--ok); animation:pomPulse 2s infinite; }
+.pom.pause { background:var(--warn-s); color:#92400E; border-color:var(--warn); }
+@keyframes pomPulse { 0%,100%{opacity:1;} 50%{opacity:.78;} }
+.pom-display { font-variant-numeric:tabular-nums; font-family:monospace; font-size:.9rem; }
+
+/* ===== DIFFICULTY ===== */
+.diff-row { display:flex; gap:8px; align-items:center; margin-top:10px; flex-wrap:wrap; }
+.diff-btn { padding:6px 16px; border-radius:99px; border:2px solid var(--line); background:var(--surf); cursor:pointer; font-size:.8rem; font-family:inherit; font-weight:600; transition:all .2s; }
+.diff-btn.ez:hover, .diff-btn.ez.on { border-color:var(--ok); background:var(--ok-s); color:#059669; }
+.diff-btn.md:hover, .diff-btn.md.on { border-color:var(--warn); background:var(--warn-s); color:#92400E; }
+.diff-btn.hd:hover, .diff-btn.hd.on { border-color:var(--err); background:var(--err-s); color:#DC2626; }
+
+/* ===== GOAL ===== */
+.goal-row {
+  display:flex; gap:8px; margin-top:10px; padding:12px 16px;
+  background:var(--warn-s); border-radius:var(--rs); border:1px solid #FDE68A; align-items:center; flex-wrap:wrap;
+}
+.goal-row input {
+  flex:1; min-width:180px; padding:8px 15px; border:1.5px solid #FDE68A; border-radius:99px;
+  font-size:.86rem; font-family:inherit; background:#fff;
+}
+.goal-row input:focus { outline:none; border-color:var(--warn); }
+
+/* ===== REFLECTION ===== */
+.ref-panel {
+  display:none; background:#F0F7FF; border:1px solid #BFDBFE; border-radius:var(--r);
+  padding:24px; margin-top:14px; animation:fadeIn .3s ease;
+}
+.ref-panel.show { display:block; }
+.ref-panel h4 { color:#1E40AF; margin-bottom:12px; font-size:.95rem; }
+.ref-q {
+  margin:7px 0; padding:10px 14px; background:#fff; border-radius:var(--rx);
+  font-size:.85rem; border-left:3px solid #1E40AF; color:var(--tx2); line-height:1.6;
+}
+
+/* ===== ACHIEVEMENT ===== */
+.ach-bar { display:flex; gap:12px; flex-wrap:wrap; margin-top:10px; padding:8px 0; }
+.ach-stat {
+  background:var(--surf2); border:1px solid var(--line); border-radius:var(--rs);
+  padding:10px 18px; text-align:center; transition:all .2s;
+}
+.ach-stat .num { font-size:1.2rem; font-weight:700; color:var(--pri); }
+.ach-stat .lbl { font-size:.72rem; color:var(--tx2); margin-top:2px; }
+.badge-i {
+  display:inline-flex; align-items:center; gap:5px; padding:5px 13px; border-radius:99px;
+  font-size:.77rem; font-weight:600; background:#F8F8F5; border:1px solid var(--line);
+}
+.badge-i.got { background:var(--ok-s); border-color:var(--ok); }
+.badge-i.lock { opacity:.45; }
+
+/* ===== WORD POPUP ===== */
+.wpop {
+  position:fixed; background:var(--surf); border-radius:var(--rs); padding:12px 18px;
+  box-shadow:0 4px 24px rgba(0,0,0,.12); z-index:500; font-size:1.1rem; font-weight:700;
+  border:2px solid var(--pri); pointer-events:none; display:none; text-align:center; min-width:70px;
+}
+.wpop .wc { font-size:1.6rem; color:var(--pri); }
+.wpop .wp { font-size:.82rem; color:var(--tx2); margin-top:2px; }
+
+/* ===== FOCUS ===== */
+.foc-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.75); z-index:400; align-items:center; justify-content:center; }
+.foc-overlay.show { display:flex; }
+.foc-card {
+  background:var(--surf); border-radius:var(--r); padding:44px 36px;
+  max-width:620px; width:90%; text-align:center; box-shadow:0 8px 48px rgba(0,0,0,.15); position:relative;
+}
+.foc-sen { font-size:1.6rem; line-height:2.2; font-weight:600; color:var(--tx); min-height:60px; display:flex; align-items:center; justify-content:center; }
+.foc-py { font-size:1rem; color:var(--tx2); margin-bottom:12px; }
+.foc-ctr { font-size:.82rem; color:var(--tx2); margin-top:20px; }
+.foc-nav { display:flex; gap:10px; justify-content:center; margin-top:22px; }
+
+/* ===== CHAT ===== */
+.chat-area {
+  min-height:320px; max-height:460px; overflow-y:auto; padding:16px;
+  background:var(--surf2); border-radius:var(--rs); border:1px solid var(--line);
+  margin-bottom:14px; scroll-behavior:smooth;
+}
+.chat-msg { margin-bottom:15px; display:flex; gap:10px; animation:fadeIn .3s ease; }
+.chat-msg.user { flex-direction:row-reverse; }
+.chat-msg .av { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.95rem; flex-shrink:0; }
+.chat-msg.ast .av { background:var(--pri-s); }
+.chat-msg.user .av { background:var(--sec-s); }
+.chat-msg .bub { max-width:72%; padding:11px 17px; border-radius:16px; font-size:.9rem; line-height:1.7; }
+.chat-msg.ast .bub { background:#fff; border:1px solid var(--line); border-top-left-radius:4px; }
+.chat-msg.user .bub { background:linear-gradient(150deg, var(--sec), #4F46E5); color:#fff; border-top-right-radius:4px; }
+.chat-msg .tm { font-size:.64rem; color:var(--tx3); margin-top:3px; }
+.chat-row { display:flex; gap:8px; }
+.chat-row input { flex:1; padding:11px 18px; border:2px solid var(--line); border-radius:99px; font-size:.9rem; font-family:inherit; }
+.chat-row input:focus { outline:none; border-color:var(--sec); box-shadow:0 0 0 3px rgba(99,102,241,.08); }
+.qck-qs { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:12px; }
+.qck-q {
+  padding:6px 15px; border-radius:99px; border:1.5px solid #DBEAFE; background:#fff;
+  cursor:pointer; font-size:.79rem; font-family:inherit; color:var(--sec);
+  transition:all .2s; font-weight:500;
+}
+.qck-q:hover { background:var(--sec-s); border-color:var(--sec); }
+
+/* ===== FLASHCARD ===== */
+.fc-box { perspective:1000px; margin:18px auto; max-width:460px; }
+.fc {
+  width:100%; min-height:220px; position:relative; cursor:pointer;
+  transform-style:preserve-3d; transition:transform .55s cubic-bezier(.4,0,.2,1);
+}
+.fc.flipped { transform:rotateY(180deg); }
+.fc-face {
+  position:absolute; inset:0; min-height:220px; backface-visibility:hidden;
+  border-radius:var(--r); padding:30px 24px; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; text-align:center;
+  box-shadow:0 6px 24px rgba(0,0,0,.06); border:1.5px solid var(--line);
+}
+.fc-front { background:linear-gradient(160deg, #FFF8F4, #FFF3EC); }
+.fc-back { background:linear-gradient(160deg, #F4F6FF, #EEF2FF); transform:rotateY(180deg); }
+.fc-front .fc-lbl { font-size:.7rem; color:var(--tx3); text-transform:uppercase; letter-spacing:2px; margin-bottom:12px; }
+.fc-front .fc-q { font-size:1.2rem; font-weight:700; color:var(--tx); }
+.fc-back .fc-lbl { font-size:.7rem; color:var(--tx3); text-transform:uppercase; letter-spacing:2px; margin-bottom:12px; }
+.fc-back .fc-a { font-size:1.05rem; color:var(--tx); line-height:1.8; }
+.fc-hint { text-align:center; color:var(--tx3); font-size:.76rem; margin-top:6px; }
+.fc-nav { display:flex; align-items:center; justify-content:center; gap:10px; margin-top:18px; }
+.fc-ctr { font-size:.85rem; font-weight:600; color:var(--tx2); min-width:70px; text-align:center; }
+.fc-acts { display:flex; gap:10px; justify-content:center; margin-top:12px; }
+.fc-acts .know { background:var(--ok-s); color:#065F46; border:2px solid var(--ok); }
+.fc-acts .know:hover { background:var(--ok); color:#fff; }
+.fc-acts .dunno { background:var(--err-s); color:#991B1B; border:2px solid #FECACA; }
+.fc-acts .dunno:hover { background:var(--err); color:#fff; border-color:var(--err); }
+.fc-stats { display:flex; gap:14px; justify-content:center; margin-top:12px; }
+.fc-st { text-align:center; padding:7px 16px; border-radius:var(--rx); background:var(--surf2); border:1px solid var(--line); }
+.fc-st .num { font-size:1.1rem; font-weight:700; }
+.fc-st .lbl { font-size:.7rem; color:var(--tx2); }
+.fc-st.kn .num { color:var(--ok); }
+.fc-st.unk .num { color:var(--err); }
+
+/* ===== REVIEW MODE ===== */
+.fc-mode-tabs {
+  display:flex; gap:0; margin-bottom:8px; border-radius:var(--rx); overflow:hidden; border:1.5px solid var(--line);
+}
+.fc-mode-tab {
+  flex:1; padding:9px 12px; text-align:center; cursor:pointer; font-size:.8rem; font-weight:600;
+  background:var(--surf); color:var(--tx2); transition:all .18s; border:none; font-family:inherit;
+}
+.fc-mode-tab.active { background:var(--pri); color:#fff; }
+.fc-mode-tab:hover:not(.active) { background:var(--pri-s); }
+.fc-dash {
+  display:flex; gap:8px; justify-content:center; margin-bottom:14px; flex-wrap:wrap;
+}
+.fc-dash-card {
+  flex:1; min-width:80px; text-align:center; padding:10px 6px; border-radius:var(--rx);
+  border:1.5px solid var(--line); background:var(--surf); transition:all .2s;
+}
+.fc-dash-card .dnum { font-size:1.25rem; font-weight:700; }
+.fc-dash-card .dlbl { font-size:.66rem; color:var(--tx3); margin-top:1px; }
+.fc-dash-card.due { border-color:#FDE68A; background:#FFFBEB; }
+.fc-dash-card.due .dnum { color:#B45309; }
+.fc-dash-card.tmrw { border-color:#BFDBFE; background:#F0F7FF; }
+.fc-dash-card.tmrw .dnum { color:#1E40AF; }
+.fc-dash-card.mastered { border-color:#A7F3D0; background:#ECFDF5; }
+.fc-dash-card.mastered .dnum { color:#065F46; }
+.fc-rate-row {
+  display:flex; gap:8px; justify-content:center; margin-top:12px; flex-wrap:wrap;
+}
+.fc-rate-btn {
+  flex:1; min-width:85px; padding:10px 6px; border-radius:var(--rx); border:2px solid;
+  cursor:pointer; font-size:.78rem; font-weight:600; transition:all .18s;
+  display:flex; flex-direction:column; align-items:center; gap:1px; font-family:inherit;
+}
+.fc-rate-btn .ric { font-size:1.1rem; }
+.fc-rate-btn .rtx { font-size:.66rem; color:var(--tx3); font-weight:400; }
+.fc-rate-btn.forget { background:#FEF2F2; border-color:#FECACA; color:#991B1B; }
+.fc-rate-btn.forget:hover { background:#FEE2E2; transform:translateY(-1px); }
+.fc-rate-btn.hard { background:#FFFBEB; border-color:#FDE68A; color:#92400E; }
+.fc-rate-btn.hard:hover { background:#FEF3C7; transform:translateY(-1px); }
+.fc-rate-btn.good { background:#ECFDF5; border-color:#A7F3D0; color:#065F46; }
+.fc-rate-btn.good:hover { background:#D1FAE5; transform:translateY(-1px); }
+.fc-review-prog {
+  margin:12px 0 4px; background:var(--surf2); border-radius:99px; height:6px; overflow:hidden;
+}
+.fc-review-prog .fill {
+  height:100%; background:linear-gradient(90deg, var(--pri), #F59059); border-radius:99px; transition:width .45s ease;
+}
+.fc-review-label {
+  text-align:center; font-size:.7rem; color:var(--tx3); margin-bottom:8px;
+}
+.fc-queue-empty {
+  text-align:center; padding:28px 16px; color:var(--tx3);
+}
+.fc-queue-empty .big { font-size:2.2rem; margin-bottom:8px; }
+.fc-queue-empty .msg { font-size:.88rem; color:var(--tx); font-weight:600; }
+.fc-queue-empty .sub { font-size:.74rem; margin-top:4px; }
+.fc-done { text-align:center; padding:24px 16px; }
+.fc-done .big { font-size:2.5rem; margin-bottom:6px; }
+.fc-done .msg { font-size:.95rem; font-weight:600; color:var(--ok); }
+.fc-done .sub { font-size:.76rem; color:var(--tx3); margin-top:4px; }
+.fc-done-stats { display:flex; gap:10px; justify-content:center; margin-top:14px; flex-wrap:wrap; }
+.fc-sched {
+  font-size:.66rem; color:var(--tx3); margin-top:6px;
+  display:flex; gap:6px; justify-content:center; flex-wrap:wrap;
+}
+.fc-sched span { padding:2px 7px; background:var(--surf2); border-radius:99px; border:1px solid var(--line); }
+.fc-deck-list { display:flex; flex-direction:column; gap:6px; margin-bottom:12px; }
+.fc-deck-item {
+  display:flex; align-items:center; justify-content:space-between; padding:10px 14px;
+  border-radius:var(--rx); border:1.5px solid var(--line); background:var(--surf);
+  cursor:pointer; transition:all .18s; font-size:.84rem;
+}
+.fc-deck-item:hover { border-color:var(--pri); background:var(--pri-s); }
+.fc-deck-item .dn { font-weight:600; }
+.fc-deck-item .dm { font-size:.7rem; color:var(--tx3); }
+.fc-deck-del {
+  background:none; border:none; color:var(--tx3); cursor:pointer; font-size:.9rem; padding:2px 6px;
+  border-radius:4px; transition:all .15s;
+}
+.fc-deck-del:hover { color:var(--err); background:var(--err-s); }
+.fc-deck-empty {
+  text-align:center; padding:24px 16px; color:var(--tx3); font-size:.84rem;
+}
+
+/* ===== DASHBOARD ===== */
+.dash-overview { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:16px; }
+.dash-card {
+  text-align:center; padding:16px 10px; border-radius:var(--rx);
+  background:var(--surf); border:1.5px solid var(--line); transition:all .18s;
+}
+.dash-card:hover { transform:translateY(-1px); box-shadow:var(--shx); }
+.dash-num { font-size:2rem; font-weight:700; color:var(--pri); line-height:1.2; }
+.dash-lbl { font-size:.72rem; color:var(--tx3); margin-top:4px; }
+.dash-modules { display:flex; flex-direction:column; gap:8px; }
+.dash-mod-row { display:flex; align-items:center; gap:10px; }
+.dash-mod-icon { font-size:1rem; width:28px; text-align:center; flex-shrink:0; }
+.dash-mod-label { width:70px; font-size:.82rem; color:var(--tx); font-weight:600; flex-shrink:0; }
+.dash-mod-bar-bg { flex:1; height:22px; background:var(--surf2); border-radius:99px; overflow:hidden; position:relative; }
+.dash-mod-bar { height:100%; border-radius:99px; transition:width .5s ease; }
+.dash-mod-bar.r { background:linear-gradient(90deg,var(--pri),var(--pri-h)); }
+.dash-mod-bar.t { background:linear-gradient(90deg,#8b5cf6,#a78bfa); }
+.dash-mod-bar.f { background:linear-gradient(90deg,#10b981,#34d399); }
+.dash-mod-bar.n { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+.dash-mod-bar.u { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+.dash-mod-bar.p { background:linear-gradient(90deg,#ef4444,#f87171); }
+.dash-mod-count { font-size:.78rem; color:var(--tx3); min-width:32px; text-align:right; font-weight:600; flex-shrink:0; }
+.dash-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px; }
+.dash-half { min-width:0; }
+.dash-heatmap { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; padding:4px 0; }
+.dash-heat-day {
+  display:flex; flex-direction:column; align-items:center; gap:2px; font-size:.68rem; color:var(--tx3);
+}
+.dash-heat-cell {
+  width:28px; height:28px; border-radius:6px; transition:all .2s;
+}
+.dash-heat-cell.l0 { background:var(--surf2); }
+.dash-heat-cell.l1 { background:rgba(242,103,34,.15); }
+.dash-heat-cell.l2 { background:rgba(242,103,34,.30); }
+.dash-heat-cell.l3 { background:rgba(242,103,34,.50); }
+.dash-heat-cell.l4 { background:rgba(242,103,34,.72); }
+.dash-heat-lbl { margin-top:2px; }
+.dash-recent { display:flex; flex-direction:column; gap:6px; max-height:280px; overflow-y:auto; }
+.dash-recent-item {
+  display:flex; align-items:center; gap:8px; padding:7px 10px; border-radius:6px;
+  background:var(--surf2); border:1px solid var(--line); font-size:.76rem;
+}
+.dash-recent-time { color:var(--tx3); font-size:.68rem; flex-shrink:0; min-width:44px; }
+.dash-recent-desc { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--tx); }
+.dash-empty { text-align:center; padding:20px; color:var(--tx3); font-size:.82rem; }
+.dash-fc-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+.dash-fc-stat {
+  text-align:center; padding:10px 8px; border-radius:var(--rx);
+  background:var(--surf2); border:1px solid var(--line);
+}
+.dash-fc-stat .num { font-size:1.4rem; font-weight:700; }
+.dash-fc-stat .lbl { font-size:.68rem; color:var(--tx3); margin-top:2px; }
+.dash-fc-stat.m .num { color:var(--ok); }
+.dash-fc-stat.p .num { color:var(--pri); }
+.dash-fc-stat.d .num { color:var(--warn); }
+.dash-fc-bar { margin-top:8px; }
+.dash-fc-bar-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:.74rem; }
+.dash-fc-bar-lbl { width:55px; color:var(--tx2); flex-shrink:0; }
+.dash-fc-bar-bg { flex:1; height:16px; background:var(--surf2); border-radius:99px; overflow:hidden; }
+.dash-fc-bar-fill { height:100%; border-radius:99px; transition:width .5s ease; }
+.dash-fc-bar-fill.ok { background:linear-gradient(90deg,#10b981,#34d399); }
+.dash-fc-bar-fill.hm { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+.dash-fc-bar-fill.fr { background:linear-gradient(90deg,#ef4444,#f87171); }
+.dash-fc-bar-val { font-size:.7rem; color:var(--tx3); min-width:30px; text-align:right; }
+
+/* ===== NOTES ===== */
+.notes-out { display:none; }
+.notes-out.show { display:block; }
+.notes-tbar {
+  display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;
+  padding-bottom:12px; border-bottom:1.5px solid var(--line); flex-wrap:wrap; gap:8px;
+}
+.notes-tbar h3 { font-size:1.1rem; color:var(--tx); }
+.ol-item {
+  display:flex; align-items:flex-start; gap:10px; padding:10px 0;
+  border-bottom:1px solid var(--line); font-size:.92rem; line-height:1.7;
+}
+.ol-num {
+  flex-shrink:0; width:26px; height:26px; border-radius:50%; background:var(--pri-s);
+  color:var(--pri); display:flex; align-items:center; justify-content:center;
+  font-weight:700; font-size:.8rem;
+}
+.term-item {
+  display:inline-flex; align-items:center; gap:5px; margin:3px 5px 3px 0;
+  padding:7px 15px; border-radius:99px; background:#F0F7FF; border:1px solid #BFDBFE;
+  font-size:.82rem; cursor:pointer; transition:all .2s;
+}
+.term-item:hover { background:#DBEAFE; transform:translateY(-1px); }
+.term-def { display:none; font-size:.76rem; color:var(--tx2); margin-left:3px; }
+.term-item.expanded .term-def { display:inline; }
+.notes-summ {
+  padding:16px 20px; background:var(--warn-s); border-radius:var(--rs);
+  border-left:3px solid var(--warn); font-size:.9rem; color:#78350F; margin-top:12px;
+}
+
+/* ===== HISTORY ===== */
+.hist-toggle {
+  position:fixed; bottom:24px; right:24px; z-index:100;
+  width:48px; height:48px; border-radius:50%;
+  background:linear-gradient(150deg, var(--pri), var(--pri-h)); color:#fff;
+  cursor:pointer; border:none; font-size:1.2rem;
+  box-shadow:0 4px 18px rgba(242,103,34,.28);
+  transition:all .22s; display:flex; align-items:center; justify-content:center;
+}
+.hist-toggle:hover { transform:scale(1.08); box-shadow:0 6px 24px rgba(242,103,34,.38); }
+.hist-panel {
+  position:fixed; top:0; right:-370px; width:350px; height:100vh;
+  background:var(--surf); box-shadow:-4px 0 24px rgba(0,0,0,.08);
+  z-index:200; transition:right .3s ease; overflow-y:auto; padding:20px; border-left:1px solid var(--line);
+}
+.hist-panel.open { right:0; }
+.hist-bd { position:fixed; inset:0; background:rgba(15,23,42,.35); z-index:199; display:none; }
+.hist-bd.show { display:block; }
+.hist-item { padding:10px 12px; margin:6px 0; border-radius:var(--rx); border:1px solid var(--line); cursor:pointer; transition:all .2s; font-size:.82rem; }
+.hist-item:hover { border-color:var(--pri); background:var(--pri-s); }
+.hist-item .time { font-size:.7rem; color:var(--tx3); }
+
+/* ===== TUTORIAL ===== */
+.tut-overlay { position:fixed; inset:0; background:rgba(15,23,42,.5); z-index:300; display:flex; align-items:center; justify-content:center; }
+.tut-card { background:var(--surf); border-radius:var(--r); padding:36px; max-width:460px; width:90%; text-align:center; box-shadow:0 8px 40px rgba(0,0,0,.1); }
+.tut-card h2 { font-size:1.2rem; margin-bottom:16px; color:var(--pri); }
+.tut-step { display:flex; align-items:center; gap:8px; padding:9px 0; border-bottom:1px solid var(--line); text-align:left; font-size:.85rem; }
+
+/* ===== FOOTER ===== */
+.ft { text-align:center; padding:24px 20px; color:var(--tx3); font-size:.8rem; border-top:1px solid var(--line); margin-top:28px; }
+
+/* ===== DARK MODE ===== */
+body.dark { --bg:#0F172A; --surf:#1E293B; --surf2:#161F35; --line:#2D3A52; --line2:#3B4A66; --tx:#E2E8F0; --tx2:#94A3B8; --tx3:#64748B; }
+body.dark .hdr { background:linear-gradient(165deg, #1E293B 0%, #263348 50%, #2D3A52 100%)!important; }
+body.dark .hdr h1, body.dark .hdr .sub, body.dark .hdr .tags span { color:#E2E8F0!important; }
+body.dark .hdr .tags span.ai { background:rgba(255,255,255,.12)!important; }
+body.dark .bar { background:rgba(30,41,59,.88)!important; }
+body.dark .bar button { background:var(--surf)!important; color:var(--tx2)!important; border-color:var(--line)!important; }
+body.dark .bar button:hover { border-color:var(--pri)!important; color:var(--pri)!important; }
+body.dark .tab { background:var(--surf)!important; color:var(--tx2)!important; }
+body.dark .tab:hover { background:rgba(242,103,34,.1)!important; }
+body.dark .card { box-shadow:0 1px 2px rgba(0,0,0,.2), 0 4px 16px rgba(0,0,0,.15)!important; }
+body.dark .stx, body.dark .stx-sen { background:var(--surf2)!important; }
+body.dark .stx-sen:hover { background:rgba(242,103,34,.08)!important; }
+body.dark textarea { background:var(--surf2)!important; color:var(--tx)!important; }
+body.dark textarea:focus { background:var(--surf)!important; box-shadow:0 0 0 4px rgba(242,103,34,.15)!important; }
+body.dark .tip { background:rgba(242,103,34,.08)!important; border-color:rgba(242,103,34,.2)!important; color:#FCA5A5!important; }
+body.dark .chat-area { background:var(--surf2)!important; }
+body.dark .chat-msg.ast .bub { background:var(--surf)!important; }
+body.dark .chat-row input { background:var(--surf2)!important; color:var(--tx)!important; }
+body.dark .fc-front { background:linear-gradient(160deg, #1E293B, #263348)!important; }
+body.dark .fc-back { background:linear-gradient(160deg, #1A2439, #1E2D45)!important; }
+body.dark .task-item { background:var(--surf2)!important; }
+body.dark .task-item:hover, body.dark .task-item.done { background:rgba(16,185,129,.08)!important; }
+body.dark .ref-panel { background:rgba(99,102,241,.06)!important; border-color:rgba(99,102,241,.2)!important; }
+body.dark .ref-q { background:var(--surf2)!important; color:var(--tx2)!important; }
+body.dark .goal-row { background:rgba(245,158,11,.08)!important; border-color:rgba(245,158,11,.2)!important; }
+body.dark .notes-summ { background:rgba(245,158,11,.08)!important; border-color:rgba(245,158,11,.2)!important; color:var(--tx2)!important; }
+body.dark .term-item { background:rgba(99,102,241,.08)!important; border-color:rgba(99,102,241,.2)!important; }
+body.dark .tut-card { background:var(--surf)!important; }
+body.dark .foc-card { background:var(--surf)!important; }
+body.dark .foc-overlay { background:rgba(0,0,0,.85)!important; }
+body.dark .hist-panel { background:var(--surf)!important; }
+body.dark .hist-bd { background:rgba(0,0,0,.6)!important; }
+body.dark .badge-i { background:var(--surf2)!important; }
+body.dark .badge-i.got { background:rgba(16,185,129,.12)!important; }
+body.dark .pbar { background:var(--line)!important; }
+body.dark .ach-stat, body.dark .fc-st, body.dark .stat { background:var(--surf2)!important; }
+body.dark .err-box { background:rgba(239,68,68,.08)!important; border-color:rgba(239,68,68,.2)!important; }
+body.dark .conn-banner { background:rgba(16,185,129,.08)!important; }
+body.dark .mm-h-wrap::before { background:linear-gradient(to right, rgba(15,23,42,.92) 0%, transparent 100%)!important; }
+body.dark .mm-h-wrap::after { background:linear-gradient(to left, rgba(15,23,42,.92) 0%, transparent 100%)!important; }
+body.dark .mm-leaf-chip { background:rgba(255,255,255,.03)!important; }
+body.dark .mm-leaf-chip:hover { background:rgba(255,255,255,.08)!important; }
+body.dark .diff-btn { background:var(--surf2)!important; }
+body.dark .qck-q { background:var(--surf2)!important; border-color:var(--line)!important; }
+body.dark .btn-sec { background:var(--surf)!important; border-color:var(--line)!important; }
+body.dark .btn-sec:hover { border-color:var(--pri)!important; background:rgba(242,103,34,.1)!important; }
+body.dark .pom.idle { background:rgba(242,103,34,.1)!important; }
+body.dark .wpop { background:var(--surf)!important; border-color:var(--pri)!important; }
+body.dark .wpop .wc { color:var(--pri)!important; }
+body.dark .wpop .wp { color:var(--tx2)!important; }
+body.dark .toast { background:var(--surf)!important; color:var(--tx)!important; box-shadow:0 4px 16px rgba(0,0,0,.4)!important; }
+body.dark .gl-progress::after { background:linear-gradient(90deg, var(--pri), var(--sec), var(--ok))!important; }
+body.dark .conn-banner.err { color:#FCA5A5!important; }
+body.dark .conn-banner.ok { color:#6EE7B7!important; }
+body.dark .ft { color:var(--tx3)!important; border-color:var(--line)!important; }
+body.dark .err-box .err-close { color:var(--tx3)!important; }
+body.dark .err-box .err-close:hover { color:var(--tx)!important; }
+body.dark .mm-arrow-col::before { background:var(--line)!important; }
+body.dark .dash-card { background:var(--surf)!important; }
+body.dark .dash-fc-stat { background:var(--surf2)!important; }
+body.dark .dash-recent-item { background:var(--surf2)!important; }
+body.dark .dash-heat-cell.l0 { background:rgba(255,255,255,.04)!important; }
+body.dark .dash-heat-cell.l1 { background:rgba(242,103,34,.12)!important; }
+body.dark .dash-heat-cell.l2 { background:rgba(242,103,34,.24)!important; }
+body.dark .dash-heat-cell.l3 { background:rgba(242,103,34,.42)!important; }
+body.dark .dash-heat-cell.l4 { background:rgba(242,103,34,.64)!important; }
+
+/* ===== DARK + HC OVERRIDE (ensure HC always wins when both classes coexist) ===== */
+body.hc.dark { background:#000!important; }
+
+/* ===== HIGH CONTRAST (Full Coverage) ===== */
+body.hc { background:#000!important; color:#FFD700!important; }
+body.hc::before { background:none!important; }
+body.hc .hdr { background:#222!important; }
+body.hc .hdr h1, body.hc .hdr .sub, body.hc .hdr .tags span { color:#FFD700!important; }
+body.hc .bar { background:#111!important; border-color:#444!important; }
+body.hc .bar button { background:#1a1a1a!important; color:#FFD700!important; border-color:#444!important; }
+body.hc .card { background:#111!important; color:#FFD700!important; border-color:#444!important; box-shadow:none!important; }
+body.hc .card-hd { color:#FFD700!important; border-color:#444!important; }
+body.hc .tab { background:#1a1a1a!important; color:#FFD700!important; }
+body.hc .tab.on { background:#FFD700!important; color:#000!important; }
+body.hc textarea { background:#0a0a0a!important; color:#FFD700!important; border-color:#FFD700!important; }
+body.hc textarea::placeholder { color:#888!important; }
+body.hc .stx, body.hc .stx-sen { background:#111!important; color:#FFD700!important; border-color:#444!important; }
+body.hc .stx-sen { border-left-color:#FFD700!important; }
+body.hc .stx-sen .py, body.hc .stx-sen .py.fb { color:#c4a200!important; }
+body.hc .tip { background:#1a1a00!important; border-color:#FFD700!important; color:#FFD700!important; }
+body.hc .tip strong { color:#FFD700!important; }
+body.hc .btn-sec { background:#1a1a1a!important; color:#FFD700!important; border-color:#FFD700!important; }
+body.hc .btn-pri { background:#FFD700!important; color:#000!important; }
+body.hc .btn-pur { background:#FFD700!important; color:#000!important; }
+body.hc .btn-suc { background:#FFD700!important; color:#000!important; }
+body.hc .mm-h-wrap::before { background:linear-gradient(to right, rgba(0,0,0,.9) 0%, transparent 100%)!important; }
+body.hc .mm-h-wrap::after { background:linear-gradient(to left, rgba(0,0,0,.9) 0%, transparent 100%)!important; }
+body.hc .mm-root-card { background:#FFD700!important; color:#000!important; }
+body.hc .mm-branch-node { background:#1a1a1a!important; border-color:#FFD700!important; color:#FFD700!important; }
+body.hc .mm-branch-node.mm-active { box-shadow:0 0 12px #FFD700!important; }
+body.hc .mm-leaf-chip { background:#1a1a1a!important; border-color:#444!important; color:#FFD700!important; }
+body.hc .mm-leaf-dot { background:#FFD700!important; }
+body.hc .fc-front { background:#1a1a00!important; border-color:#FFD700!important; }
+body.hc .fc-back { background:#001a1a!important; border-color:#FFD700!important; }
+body.hc .fc-front .fc-q { color:#FFD700!important; }
+body.hc .fc-back .fc-a { color:#FFD700!important; }
+body.hc .fc-front .fc-lbl, body.hc .fc-back .fc-lbl { color:#999!important; }
+body.hc .chat-area { background:#0a0a0a!important; border-color:#444!important; }
+body.hc .chat-msg.ast .bub { background:#1a1a1a!important; color:#FFD700!important; border-color:#444!important; }
+body.hc .chat-msg.user .bub { background:#FFD700!important; color:#000!important; }
+body.hc .chat-msg.ast .av { background:#333!important; }
+body.hc .chat-msg.user .av { background:#444!important; }
+body.hc .chat-row input { background:#0a0a0a!important; color:#FFD700!important; border-color:#FFD700!important; }
+body.hc .qck-q { background:#1a1a1a!important; color:#FFD700!important; border-color:#FFD700!important; }
+body.hc .term-item { background:#1a1a00!important; color:#FFD700!important; border-color:#FFD700!important; }
+body.hc .term-def { color:#c4a200!important; }
+body.hc .notes-summ { background:#1a1a00!important; color:#FFD700!important; border-color:#FFD700!important; }
+body.hc .ref-panel { background:#0a0a1a!important; color:#FFD700!important; border-color:#FFD700!important; }
+body.hc .ref-panel h4 { color:#FFD700!important; }
+body.hc .ref-q { background:#111!important; color:#FFD700!important; border-color:#FFD700!important; }
+body.hc .task-item { background:#0a0a0a!important; border-color:#444!important; }
+body.hc .task-item.done { background:#0a1a0a!important; border-color:#FFD700!important; }
+body.hc .task-cb { border-color:#FFD700!important; }
+body.hc .task-cb.chk { background:#FFD700!important; color:#000!important; border-color:#FFD700!important; }
+body.hc .task-enc { color:#c4a200!important; }
+body.hc .task-step { color:#FFD700!important; }
+body.hc .ach-stat, body.hc .fc-st { background:#1a1a1a!important; border-color:#444!important; color:#FFD700!important; }
+body.hc .ach-stat .num, body.hc .fc-st .num { color:#FFD700!important; }
+body.hc .ach-stat .lbl, body.hc .fc-st .lbl { color:#888!important; }
+body.hc .badge-i { background:#1a1a1a!important; border-color:#444!important; color:#FFD700!important; }
+body.hc .badge-i.got { background:#1a1a00!important; border-color:#FFD700!important; }
+body.hc .badge-i.lock { opacity:.7!important; }
+body.hc .pbar { background:#333!important; }
+body.hc .goal-row { background:#1a1a00!important; border-color:#FFD700!important; }
+body.hc .goal-row input { background:#0a0a0a!important; color:#FFD700!important; border-color:#FFD700!important; }
+body.hc .tut-card { background:#111!important; color:#FFD700!important; border:2px solid #FFD700!important; }
+body.hc .tut-card h2 { color:#FFD700!important; }
+body.hc .tut-step { border-color:#444!important; color:#FFD700!important; }
+body.hc .foc-card { background:#111!important; color:#FFD700!important; border:2px solid #FFD700!important; }
+body.hc .foc-sen { color:#FFD700!important; }
+body.hc .foc-py { color:#c4a200!important; }
+body.hc .foc-ctr { color:#888!important; }
+body.hc .hist-panel { background:#111!important; border-color:#444!important; color:#FFD700!important; }
+body.hc .hist-item { background:#1a1a1a!important; border-color:#444!important; color:#FFD700!important; }
+body.hc .hist-item .time { color:#888!important; }
+body.hc .wpop { background:#111!important; color:#FFD700!important; border-color:#FFD700!important; }
+body.hc .fc-acts .know { background:#1a1a00!important; color:#FFD700!important; border-color:#FFD700!important; }
+body.hc .fc-acts .dunno { background:#1a0000!important; color:#FFD700!important; border-color:#FFD700!important; }
+body.hc .err-box { background:#1a0000!important; color:#FFD700!important; border-color:#FFD700!important; }
+body.hc .err-box .err-close { color:#FFD700!important; }
+body.hc .err-box .err-close:hover { opacity:1!important; }
+body.hc .conn-banner.err { background:#1a0000!important; color:#FFD700!important; border-color:#FFD700!important; }
+body.hc .conn-banner.ok { background:#001a0a!important; color:#FFD700!important; border-color:#FFD700!important; }
+body.hc .pom.idle { background:#1a1a1a!important; color:#FFD700!important; }
+body.hc .pom.run { background:#1a1a00!important; color:#FFD700!important; }
+body.hc .pom.pause { background:#1a0000!important; color:#FFD700!important; }
+body.hc .ft { color:#888!important; border-color:#444!important; }
+body.hc .stat { background:#1a1a1a!important; border-color:#444!important; color:#FFD700!important; }
+body.hc .stat strong { color:#FFD700!important; }
+body.hc .stats .tag-pri, body.hc .stats .tag-pur { color:#000!important; }
+body.hc .tut-overlay { background:rgba(0,0,0,.85)!important; }
+body.hc .foc-overlay { background:rgba(0,0,0,.9)!important; }
+body.hc .hist-bd { background:rgba(0,0,0,.8)!important; }
+body.hc .dash-card { background:#1a1a1a!important; border-color:#444!important; }
+body.hc .dash-card .dash-num { color:#FFD700!important; }
+body.hc .dash-card .dash-lbl { color:#888!important; }
+body.hc .dash-fc-stat { background:#1a1a1a!important; border-color:#444!important; }
+body.hc .dash-recent-item { background:#1a1a1a!important; border-color:#444!important; }
+body.hc .dash-heat-cell.l0 { background:#1a1a1a!important; }
+body.hc .dash-heat-cell.l1 { background:rgba(255,215,0,.12)!important; }
+body.hc .dash-heat-cell.l2 { background:rgba(255,215,0,.25)!important; }
+body.hc .dash-heat-cell.l3 { background:rgba(255,215,0,.45)!important; }
+body.hc .dash-heat-cell.l4 { background:rgba(255,215,0,.70)!important; }
+body.hc .diff-btn { background:#1a1a1a!important; color:#FFD700!important; border-color:#444!important; }
+body.hc .diff-btn.ez.on, body.hc .diff-btn.md.on, body.hc .diff-btn.hd.on { background:#FFD700!important; color:#000!important; }
+body.hc .mm-arrow-col::before { background:#444!important; }
+body.hc .mm-arrow-col::after { color:#FFD700!important; }
+
+/* ===== GLOBAL LOADING BAR ===== */
+.gl-progress {
+  position:fixed; top:0; left:0; height:3px; z-index:9999; pointer-events:none;
+  background:transparent; width:100%;
+}
+.gl-progress::after {
+  content:''; display:block; height:100%; width:0;
+  background:linear-gradient(90deg, var(--pri), var(--sec), var(--ok), var(--pri));
+  background-size:300% 100%; border-radius:0 2px 2px 0;
+  transition:width .3s ease;
+}
+.gl-progress.running::after {
+  animation:glProg 1.8s ease-in-out infinite;
+  width:40%;
+}
+.gl-progress.done::after {
+  width:100%; transition:width .4s ease; animation:none;
+  opacity:0; transition:width .4s ease, opacity .5s .4s;
+}
+@keyframes glProg {
+  0%{width:5%;background-position:0% 50%;}
+  40%{width:55%;background-position:50% 50%;}
+  70%{width:78%;background-position:70% 50%;}
+  100%{width:92%;background-position:100% 50%;}
+}
+
+/* ===== TOAST ===== */
+.toast {
+  position:fixed; bottom:80px; left:50%; transform:translateX(-50%);
+  background:#1E293B; color:#fff; padding:10px 22px; border-radius:99px;
+  font-size:.84rem; font-weight:500; z-index:999; opacity:0;
+  pointer-events:none; transition:opacity .3s, transform .3s;
+  box-shadow:0 4px 16px rgba(0,0,0,.18); white-space:nowrap;
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(-6px); }
+
+/* ===== MOBILE HAMBURGER ===== */
+.bar-hamburger {
+  display:none; align-items:center; justify-content:center;
+  width:36px; height:36px; border-radius:8px; border:1.5px solid var(--line);
+  background:var(--surf); cursor:pointer; font-size:1.1rem; flex-shrink:0;
+}
+.bar-items { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.bar-items.collapsed { display:none; }
+
+/* ===== SCROLL TO TOP ===== */
+.scroll-top {
+  position:fixed; bottom:84px; right:24px; z-index:99;
+  width:42px; height:42px; border-radius:50%;
+  background:var(--surf); color:var(--tx2); cursor:pointer; border:1.5px solid var(--line);
+  font-size:1rem; display:flex; align-items:center; justify-content:center;
+  box-shadow:0 2px 10px rgba(0,0,0,.06); transition:all .25s; opacity:0; pointer-events:none;
+  transform:translateY(8px);
+}
+.scroll-top.visible { opacity:1; pointer-events:auto; transform:translateY(0); }
+.scroll-top:hover { background:var(--pri-s); color:var(--pri); border-color:var(--pri); transform:translateY(-2px); }
+
+/* ===== FLASHCARD KEYBOARD HINT ===== */
+.fc-kb-hint {
+  display:flex; gap:6px; justify-content:center; margin-top:8px; flex-wrap:wrap;
+}
+.fc-kb {
+  font-size:.64rem; color:var(--tx3); padding:2px 8px; border-radius:4px;
+  background:var(--surf2); border:1px solid var(--line); font-family:monospace;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width:320px) {
+  /* Ultra-small screens: further reduce spacing and font sizes */
+  .hdr { padding:20px 12px 16px; }
+  .hdr h1 { font-size:1rem; }
+  .hdr .sub { font-size:.72rem; }
+  .wrap { padding:10px 6px 24px; }
+  .card { padding:12px; }
+  .card-hd { font-size:.88rem; }
+  .tab { padding:5px 7px; font-size:.68rem; gap:1px; }
+  .tab .ic { font-size:.8rem; }
+  .btn, .btn-pri, .btn-sec, .btn-pur { padding:7px 12px; font-size:.74rem; }
+  .bar button { padding:4px 6px; font-size:.64rem; }
+  .mm-root-col { width:80px; }
+  .mm-root-card { padding:8px 10px; font-size:.76rem; max-width:80px; }
+  .mm-branch-col { width:90px; gap:6px; }
+  .mm-branch-node { padding:6px 8px; font-size:.7rem; }
+  .mm-leaf-col { min-width:100px; }
+  .mm-leaf-chip { font-size:.66rem; padding:3px 6px; }
+  .mm-arrow-col, .mm-arrow2 { width:14px; }
+  .fc-face { padding:16px 10px; font-size:.82rem; }
+  .fc { min-height:140px; }
+  .fc-face { min-height:140px; }
+  .chat-msg .bub { max-width:94%; font-size:.76rem; }
+  .foc-sen { font-size:1rem; }
+  .scroll-top { bottom:64px; right:6px; width:30px; height:30px; }
+  .hist-toggle { bottom:14px; right:8px; width:36px; height:36px; }
+  .toast { bottom:56px; font-size:.7rem; padding:6px 12px; }
+  .conn-banner { font-size:.68rem; padding:6px 10px; }
+}
+@media (max-width:480px) {
+  .bar-hamburger { display:flex; }
+  .bar { justify-content:flex-start; gap:4px; }
+  .bar-items { display:none; }
+  .bar-items.expanded { display:flex; flex-wrap:wrap; }
+  .scroll-top { bottom:72px; right:12px; width:36px; height:36px; }
+  .hist-toggle { bottom:16px; right:12px; width:40px; height:40px; }
+  .hdr { padding:28px 16px 22px; }
+  .hdr h1 { font-size:1.2rem; }
+  .hdr .sub { font-size:.82rem; }
+  .hdr .tags { gap:6px; }
+  .hdr .tags span { padding:5px 10px; font-size:.7rem; }
+  .wrap { padding:16px 10px 32px; }
+  .card { padding:16px; border-radius:var(--rs); }
+  .card-hd { font-size:.95rem; margin-bottom:14px; }
+  .tabs { gap:2px; }
+  .tab { padding:7px 10px; font-size:.75rem; gap:3px; }
+  .tab .ic { font-size:.9rem; }
+  .btn, .btn-pri, .btn-sec, .btn-pur { padding:9px 16px; font-size:.82rem; }
+  .bar { padding:6px 8px; gap:3px; flex-wrap:wrap; }
+  .bar button { padding:5px 8px; font-size:.7rem; }
+  .bar .sep { display:none; }
+  .mm-root-col { width:100px; }
+  .mm-root-card { padding:12px 14px; font-size:.88rem; max-width:100px; }
+  .mm-branch-col { width:110px; gap:8px; }
+  .mm-branch-node { padding:8px 12px; font-size:.78rem; }
+  .mm-leaf-col { min-width:130px; }
+  .mm-leaf-chip { font-size:.72rem; padding:4px 9px; }
+  .mm-arrow-col, .mm-arrow2 { width:18px; }
+  .col2 { grid-template-columns:1fr; }
+  .qck-qs { gap:4px; }
+  .qck-q { padding:5px 10px; font-size:.72rem; }
+  .fc-box { max-width:100%; }
+  .chat-msg .bub { max-width:90%; font-size:.82rem; }
+  .foc-sen { font-size:1.1rem; }
+  .hist-panel { width:88vw; right:-88vw; }
+  .hist-toggle { bottom:16px; right:16px; width:42px; height:42px; }
+  .toast { bottom:64px; font-size:.76rem; padding:8px 16px; }
+  .dash-overview { grid-template-columns:repeat(2,1fr); gap:6px; }
+  .dash-row { grid-template-columns:1fr; }
+  .dash-num { font-size:1.4rem; }
+}
+@media (max-width:640px) {
+  .hdr h1 { font-size:1.4rem; }
+  .card { padding:20px; }
+  .btn { padding:10px 22px; font-size:.9rem; }
+  .tab { padding:8px 15px; font-size:.8rem; }
+  .foc-sen { font-size:1.25rem; }
+  .chat-msg .bub { max-width:88%; }
+  .fc { min-height:180px; }
+  .fc-face { min-height:180px; padding:22px 16px; }
+}
+
+/* ===== READING DIFFICULTY SELECTOR ===== */
+.read-diff-row {
+  display:flex; gap:6px; align-items:center; margin:10px 0 0; flex-wrap:wrap;
+}
+.read-diff-btn {
+  padding:5px 12px; border-radius:99px; border:1.5px solid var(--line);
+  background:var(--surf); cursor:pointer; font-size:.76rem; font-family:inherit;
+  font-weight:600; color:var(--tx2); transition:all .2s;
+}
+.read-diff-btn:hover { border-color:var(--pri); color:var(--pri); background:var(--pri-s); }
+.read-diff-btn.on { border-color:var(--pri); background:var(--pri); color:#fff; }
+
+/* ===== STEP-BY-STEP MODE ===== */
+.step-mode-toggle {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:4px 12px; border-radius:99px; border:1.5px solid var(--line);
+  background:var(--surf); cursor:pointer; font-size:.72rem; font-family:inherit;
+  color:var(--tx3); transition:all .2s; font-weight:500;
+}
+.step-mode-toggle:hover { border-color:var(--ok); color:#059669; background:var(--ok-s); }
+.step-mode-toggle.on { border-color:var(--ok); background:var(--ok); color:#fff; }
+
+.step-focus-overlay { display:none; position:relative; }
+.step-focus-overlay.on { display:block; }
+.step-focus-card {
+  background:linear-gradient(160deg, #FFF8F4, #FFF3EC);
+  border:2px solid var(--pri); border-radius:var(--r);
+  padding:36px 28px; text-align:center; margin:16px 0;
+  box-shadow:0 6px 28px rgba(242,103,34,.10);
+  animation:stepFocusIn .4s cubic-bezier(.22,.61,.36,1);
+  min-height:160px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+}
+@keyframes stepFocusIn {
+  from{opacity:0;transform:scale(.94);}
+  to{opacity:1;transform:scale(1);}
+}
+.step-focus-step {
+  font-size:.7rem; color:var(--tx3); text-transform:uppercase; letter-spacing:2px; margin-bottom:8px;
+}
+.step-focus-text {
+  font-size:1.15rem; font-weight:700; color:var(--tx); line-height:1.8;
+  max-width:500px; margin:0 auto;
+}
+.step-focus-enc {
+  font-size:.82rem; color:var(--pri); margin-top:12px;
+  font-style:italic; background:var(--pri-s); padding:6px 16px; border-radius:99px; display:inline-block;
+}
+.step-nav-row {
+  display:flex; gap:10px; justify-content:center; align-items:center; margin-top:20px;
+}
+.step-nav-progress {
+  font-size:.82rem; color:var(--tx2); font-weight:600; min-width:80px; text-align:center;
+}
+.step-done-list {
+  display:flex; flex-direction:column; gap:4px; margin-top:8px; max-height:120px; overflow-y:auto;
+}
+.step-done-item {
+  font-size:.76rem; color:var(--tx3); padding:4px 10px;
+  border-left:3px solid var(--ok); text-align:left;
+  text-decoration:line-through; opacity:.7;
+}
+
+/* ===== WELCOME BACK ===== */
+.wb-banner {
+  display:none; align-items:center; justify-content:center; gap:10px;
+  padding:12px 24px; background:linear-gradient(135deg, #EEF2FF, #E0E7FF);
+  border-bottom:1.5px solid #BFDBFE; text-align:center; position:relative; z-index:10;
+  animation:fadeIn .35s ease; font-size:.84rem; font-weight:600; color:#1E40AF;
+}
+.wb-banner.show { display:flex; flex-wrap:wrap; }
+.wb-banner .wb-close {
+  background:none; border:none; cursor:pointer; font-size:1.1rem;
+  color:#64748B; padding:0 4px; line-height:1;
+}
+.wb-banner .wb-close:hover { color:#1E293B; }
+.wb-banner .wb-resume {
+  color:var(--pri); cursor:pointer; text-decoration:underline; font-weight:700;
+}
+
+/* ===== USER INFO IN HEADER ===== */
+.user-badge {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:4px 12px; border-radius:99px; font-size:.78rem; font-weight:600;
+  background:rgba(255,255,255,.18); backdrop-filter:blur(6px);
+  color:#fff; cursor:pointer; transition:all .2s;
+  text-decoration:none; border:1px solid rgba(255,255,255,.15);
+}
+.user-badge:hover { background:rgba(255,255,255,.28); }
+.user-badge.guest { font-style:italic; opacity:.8; }
+
+/* ===== FONT SELECTOR IN TOOLBAR ===== */
+.bar .font-sel {
+  padding:5px 10px; border-radius:99px; border:1.5px solid var(--line);
+  background:var(--surf); cursor:pointer; font-size:.72rem; font-family:inherit;
+  color:var(--tx2); font-weight:500; transition:all .2s;
+}
+.bar .font-sel:hover { border-color:var(--pri); color:var(--pri); background:var(--pri-s); }
+.bar .font-sel.on { border-color:var(--pri); background:var(--pri); color:#fff; }
+</style>
+</head>
+<body>
+
+<!-- Global Loading Bar -->
+<div class="gl-progress" id="global-progress"></div>
+
+<!-- Connection -->
+<div class="conn-banner" id="conn-banner"></div>
+
+<!-- Welcome Back Banner -->
+<div class="wb-banner" id="wb-banner">
+  <span>👋 <span id="wb-msg">欢迎回来！</span></span>
+  <span class="wb-resume" id="wb-resume" style="display:none;" onclick="resumeLastActivity()">继续上次</span>
+  <button class="wb-close" onclick="dismissWBBanner()" title="忽略">✕</button>
+</div>
+
+<!-- Header -->
+<header class="hdr">
+  <h1>🦉 启明 &middot; AI 学习伴侣</h1>
+  <p class="sub">为每一位独特的学习者，点亮前行的路</p>
+  <div class="tags">
+    <span>✨ 阅读障碍友好</span><span>🧠 ADHD友好</span><span>👂 多感官学习</span>
+    <span class="ai">🤖 DeepSeek 驱动</span>
+    <a href="login.html" class="user-badge" id="user-badge" title="切换用户">👤 未登录</a>
+  </div>
+</header>
+
+<!-- Toolbar -->
+<nav class="bar">
+  <button class="bar-hamburger" onclick="toggleBarMenu()" id="bar-hamburger" title="菜单">☰</button>
+  <div class="bar-items" id="bar-items">
+  <span style="font-size:.76rem;color:var(--tx3);font-weight:600;">显示：</span>
+  <button onclick="changeFontSize(-1)">A-</button>
+  <span class="fs" id="fs-indicator">标准</span>
+  <button onclick="changeFontSize(1)">A+</button>
+  <span class="sep"></span>
+  <button onclick="toggleLineHeight()">↕ 行距</button>
+  <span class="sep"></span>
+  <button onclick="exportMindmapText()">📸 导出导图</button>
+  <span class="sep"></span>
+  <button onclick="cycleVisualMode()" id="btn-visual-mode" title="切换显示模式">☀️ 浅色</button>
+  <span class="sep"></span>
+  <button class="font-sel" id="btn-font-mode" onclick="cycleFontMode()" title="切换字体">Aa 字体</button>
+  <span class="sep"></span>
+  <button onclick="showTutorial()">📖 指南</button>
+  <span class="sep"></span>
+  <span id="server-status" style="font-size:.73rem;display:flex;align-items:center;gap:4px;"></span>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <!-- Tabs -->
+  <nav class="tabs">
+    <div class="tab on" onclick="switchTab('dashboard')" id="tab-dashboard"><span class="ic">📊</span> 学习仪表盘</div>
+    <div class="tab" onclick="switchTab('reading')" id="tab-reading"><span class="ic">📖</span> 阅读辅助</div>
+    <div class="tab" onclick="switchTab('task')" id="tab-task"><span class="ic">🎯</span> 任务拆解</div>
+    <div class="tab" onclick="switchTab('tutor')" id="tab-tutor"><span class="ic">💬</span> AI答疑</div>
+    <div class="tab" onclick="switchTab('flashcard')" id="tab-flashcard"><span class="ic">🃏</span> 知识闪卡</div>
+    <div class="tab" onclick="switchTab('notes')" id="tab-notes"><span class="ic">📝</span> 学习笔记</div>
+  </nav>
+
+  <!-- ===== PANEL 0: 学习仪表盘 ===== -->
+  <section class="panel on" id="panel-dashboard">
+    <!-- 概览卡片 -->
+    <div class="dash-overview" id="dash-overview">
+      <div class="dash-card" id="dash-total"><div class="dash-num">-</div><div class="dash-lbl">总操作次数</div></div>
+      <div class="dash-card" id="dash-streak"><div class="dash-num">-</div><div class="dash-lbl">连续学习天数</div></div>
+      <div class="dash-card" id="dash-today"><div class="dash-num">-</div><div class="dash-lbl">今日操作</div></div>
+      <div class="dash-card" id="dash-focus"><div class="dash-num">-</div><div class="dash-lbl">累计专注(分钟)</div></div>
+    </div>
+
+    <!-- 模块分布 -->
+    <div class="card">
+      <div class="card-hd">📂 模块使用分布</div>
+      <div class="dash-modules" id="dash-modules"></div>
+    </div>
+
+    <!-- 闪卡深度分析 -->
+    <div class="card" id="dash-fc-card">
+      <div class="card-hd">🃏 闪卡复习深度分析</div>
+      <div id="dash-fc-content">
+        <p class="dash-empty">暂无闪卡数据，快去<a href="javascript:switchTab('flashcard')" style="color:var(--pri);cursor:pointer;">创建知识闪卡</a>开始复习吧</p>
+      </div>
+    </div>
+
+    <!-- 周活动热力 + 最近活动 -->
+    <div class="dash-row">
+      <div class="dash-half">
+        <div class="card">
+          <div class="card-hd">📅 近7日活动热力</div>
+          <div class="dash-heatmap" id="dash-heatmap"></div>
+        </div>
+      </div>
+      <div class="dash-half">
+        <div class="card">
+          <div class="card-hd">🕐 最近活动</div>
+          <div id="dash-recent">
+            <p class="dash-empty">暂无活动记录</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PANEL 1: 阅读辅助 ===== -->
+  <section class="panel" id="panel-reading">
+    <div class="card">
+      <div class="card-hd">📥 输入课文或长文本</div>
+      <div class="tip">💡 <strong>只需一步：</strong>粘贴课文，AI自动完成简化、拼音标注和思维导图生成。</div>
+      <textarea id="reading-input" placeholder="在这里粘贴课文或长文本……&#10;&#10;例如：&#10;教育技术是指运用现代教育理论和现代信息技术，通过对教与学过程和资源的设计、开发、利用、评价和管理，以实现教学优化的理论与实践。"></textarea>
+      <div class="read-diff-row">
+        <span style="font-size:.76rem;font-weight:600;color:var(--tx2);">📚 简化程度：</span>
+        <button class="read-diff-btn on" onclick="setReadDifficulty('basic',this)">🌱 基础（大幅简化）</button>
+        <button class="read-diff-btn" onclick="setReadDifficulty('standard',this)">📖 标准（适度简化）</button>
+        <button class="read-diff-btn" onclick="setReadDifficulty('pinyin',this)">📝 仅拼音标注</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-pri" onclick="processReading()" id="btn-reading">🎯 智能处理</button>
+        <button class="btn btn-sec" onclick="loadDemoText()">📋 加载示例</button>
+      </div>
+      <div class="err-box" id="reading-error"></div>
+    </div>
+
+    <div id="reading-results" style="display:none;">
+      <div class="card">
+        <div class="card-hd">📖 简化文本 + 拼音</div>
+        <div class="tip" style="font-size:.82rem;">💡 点击任意短句可查看逐字拼音和发音</div>
+        <div class="stx" id="simplified-output"></div>
+        <div class="btn-row">
+          <button class="btn btn-sec" onclick="speakText()" id="btn-speak">🔊 朗读</button>
+          <button class="btn btn-sec" onclick="stopSpeak()" id="btn-stop-speak" style="display:none;">⏹ 停止</button>
+          <button class="btn btn-sec" onclick="openFocusMode()">🔬 逐句聚焦</button>
+        </div>
+        <div class="stats" id="reading-stats"></div>
+      </div>
+      <div class="card">
+        <div class="card-hd" style="justify-content:space-between;">
+          <span>🧠 思维导图</span>
+          <span style="font-size:.68rem;color:var(--tx3);font-weight:400;">← 横向展开，可左右滚动</span>
+        </div>
+        <div class="mm-h-wrap">
+          <div class="mm-h" id="mindmap-container"></div>
+        </div>
+        <div class="mm-source" id="mindmap-source"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PANEL 2: 任务拆解 ===== -->
+  <section class="panel" id="panel-task">
+    <div class="card">
+      <div class="card-hd">📝 输入大任务</div>
+      <div class="tip">💡 <strong>只需一步：</strong>写下任务，AI拆成一步步可执行的微任务。</div>
+      <textarea id="task-input" placeholder="输入你想完成的任务……&#10;&#10;例如：准备《教育技术学》期末考试，复习教材1-3章的重点内容"></textarea>
+      <div class="goal-row">
+        <span style="font-size:.85rem;font-weight:600;">🎯 目标：</span>
+        <input type="text" id="goal-input" placeholder="如：30分钟内完成……" maxlength="60">
+      </div>
+      <div class="diff-row">
+        <span style="font-size:.82rem;font-weight:600;color:var(--tx2);">📊 难度：</span>
+        <button class="diff-btn ez on" onclick="setDifficulty('easy',this)">🌱 简单</button>
+        <button class="diff-btn md" onclick="setDifficulty('medium',this)">🌿 中等</button>
+        <button class="diff-btn hd" onclick="setDifficulty('hard',this)">🌳 困难</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-pri" onclick="breakTask()" id="btn-break">🪄 智能拆解</button>
+        <button class="btn btn-sec" onclick="loadDemoTask()">📋 加载示例</button>
+      </div>
+      <div class="err-box" id="task-error"></div>
+    </div>
+
+    <div id="task-results" style="display:none;">
+      <div class="card">
+        <div class="card-hd" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
+          <span>✅ 微任务清单</span>
+          <div style="display:flex;gap:8px;align-items:center;">
+          <button class="step-mode-toggle" id="step-mode-toggle" onclick="toggleStepMode()" title="逐步模式：每次只显示一步，减少干扰">🧩 逐步模式</button>
+          <button class="pom idle" onclick="togglePomodoro()" id="pomodoro-btn">⏱ 计时 <span class="pom-display" id="pomodoro-display">10:00</span></button>
+          </div>
+        </div>
+        <div class="pbar"><div class="pfill" id="task-progress-fill" style="width:0%"></div></div>
+        <div class="plbl" id="task-progress-label">准备开始</div>
+        <ul class="task-list" id="task-list"></ul>
+        <!-- Step-by-Step Focus View -->
+        <div class="step-focus-overlay" id="step-focus-overlay">
+          <div class="step-focus-card">
+            <div class="step-focus-step" id="step-focus-step">第1步</div>
+            <div class="step-focus-text" id="step-focus-text"></div>
+            <div class="step-focus-enc" id="step-focus-enc" style="display:none;"></div>
+          </div>
+          <div class="step-nav-row">
+            <button class="btn btn-sec btn-sm" onclick="stepPrev()" id="step-prev-btn">◀ 上一步</button>
+            <span class="step-nav-progress" id="step-nav-progress">1 / 1</span>
+            <button class="btn btn-pri btn-sm" onclick="stepNext()" id="step-next-btn">完成 ✓</button>
+          </div>
+          <div class="step-done-list" id="step-done-list"></div>
+          <div class="btn-row" style="margin-top:16px;">
+            <button class="btn btn-sec" onclick="toggleStepMode()" style="font-size:.78rem;">📋 查看全部步骤</button>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-suc" onclick="checkAllTasks()">🎉 全部完成</button>
+          <button class="btn btn-sec" onclick="resetTasks()">🔄 重新开始</button>
+        </div>
+      </div>
+      <div class="cele" id="celebration"><div class="emoji" id="celebration-emoji"></div><div class="msg" id="celebration-msg"></div><div style="margin-top:6px;color:var(--tx2);" id="celebration-sub"></div></div>
+      <div class="ref-panel" id="reflection-panel">
+        <h4>🔄 任务反思</h4>
+        <div class="ref-q" id="reflection-q1"></div><div class="ref-q" id="reflection-q2"></div><div class="ref-q" id="reflection-q3"></div>
+        <button class="btn btn-sec btn-sm" onclick="closeReflection()" style="margin-top:10px;">👍 知道了</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PANEL 3: AI答疑 ===== -->
+  <section class="panel" id="panel-tutor">
+    <div class="card">
+      <div class="card-hd">💬 AI智能答疑</div>
+      <div class="tip">💡 直接提问或点击下方快捷按钮。<strong>关联阅读文本：</strong>AI会结合你在"阅读辅助"中加载的内容回答。</div>
+      <div class="qck-qs" id="quick-questions">
+        <button class="qck-q" onclick="askQuick('请用简单的话解释这段文字在说什么')">🤔 这段在说什么？</button>
+        <button class="qck-q" onclick="askQuick('请给一个生活中的例子帮助我理解')">💡 举个例子</button>
+        <button class="qck-q" onclick="askQuick('这里有我不懂的词，请解释一下')">📖 解释生词</button>
+        <button class="qck-q" onclick="askQuick('请帮我总结这段文字的重点')">📋 总结重点</button>
+        <button class="qck-q" onclick="askQuick('请用更简单的话重新说一遍')">🔄 更简单点</button>
+      </div>
+      <div class="chat-area" id="chat-area">
+        <div class="chat-msg ast">
+          <div class="av">🦉</div>
+          <div><div class="bub">你好！有任何学习问题都可以问我。如果你在"阅读辅助"中加载了文本，我还能结合上下文帮你理解~</div><div class="tm">现在</div></div>
+        </div>
+      </div>
+      <div class="chat-row">
+        <input type="text" id="tutor-input" placeholder="输入你的问题，按Enter发送…" onkeydown="if(event.key==='Enter')askTutor()">
+        <button class="btn btn-pur btn-sm" onclick="askTutor()" id="btn-tutor-send">📨 发送</button>
+      </div>
+      <div class="err-box" id="tutor-error"></div>
+    </div>
+  </section>
+
+  <!-- ===== PANEL 4: 知识闪卡 ===== -->
+  <section class="panel" id="panel-flashcard">
+    <div class="card">
+      <div class="card-hd">🃏 知识闪卡</div>
+      <div class="tip">💡 <strong>只需一步：</strong>粘贴学习材料，AI提取知识点生成闪卡。点击卡片翻转查看答案。</div>
+      <textarea id="flashcard-input" placeholder="粘贴要学习的文本内容……（至少20字）&#10;&#10;例如：教育技术的理论基础包括建构主义、认知负荷理论和多媒体学习理论……"></textarea>
+      <div class="btn-row">
+        <button class="btn btn-pur" onclick="generateFlashcards()" id="btn-flashcard">✨ 生成闪卡</button>
+        <button class="btn btn-sec" onclick="loadFlashcardDemo()">📋 加载示例</button>
+      </div>
+      <div class="err-box" id="flashcard-error"></div>
+    </div>
+    <div id="flashcard-results" style="display:none;">
+      <!-- Mode Tabs -->
+      <div class="fc-mode-tabs">
+        <button class="fc-mode-tab active" id="fc-tab-browse" onclick="switchFCMode('browse')">📇 自由浏览</button>
+        <button class="fc-mode-tab" id="fc-tab-review" onclick="switchFCMode('review')">🔁 间隔复习</button>
+      </div>
+      <!-- Browse Mode -->
+      <div id="fc-browse-panel">
+        <div class="card">
+          <div class="card-hd" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
+            <span>📇 知识闪卡</span>
+            <button class="btn btn-pri btn-sm" onclick="resetFlashcardUI()">↩ 返回输入</button>
+          </div>
+          <div class="fc-box"><div class="fc" id="flashcard" onclick="flipCard()">
+            <div class="fc-face fc-front"><span class="fc-lbl">问题 / 术语</span><span class="fc-q" id="fc-question"></span></div>
+            <div class="fc-face fc-back"><span class="fc-lbl">答案 / 解释</span><span class="fc-a" id="fc-answer"></span></div>
+          </div></div>
+          <p class="fc-hint">👆 点击卡片翻转查看答案</p>
+          <div class="fc-kb-hint">
+            <span class="fc-kb">← → 翻页</span>
+            <span class="fc-kb">Space 翻转</span>
+          </div>
+          <div class="fc-nav">
+            <button class="btn btn-sec btn-sm" onclick="prevCard()">◀ 上一张</button>
+            <span class="fc-ctr" id="fc-counter">1 / 1</span>
+            <button class="btn btn-sec btn-sm" onclick="nextCard()">下一张 ▶</button>
+          </div>
+          <div class="fc-stats">
+            <div class="fc-st kn"><div class="num" id="fc-known">0</div><div class="lbl">已掌握</div></div>
+            <div class="fc-st unk"><div class="num" id="fc-unknown">0</div><div class="lbl">待复习</div></div>
+          </div>
+        </div>
+      </div>
+      <!-- Review Mode -->
+      <div id="fc-review-panel" style="display:none;">
+        <!-- Dashboard -->
+        <div class="fc-dash" id="fc-dashboard"></div>
+        <!-- Queue / Card View -->
+        <div id="fc-review-content"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PANEL 5: 学习笔记 ===== -->
+  <section class="panel" id="panel-notes">
+    <div class="card">
+      <div class="card-hd">📝 学习笔记整理</div>
+      <div class="tip">💡 <strong>只需一步：</strong>粘贴课堂笔记，AI整理成结构化提纲并提取关键术语。</div>
+      <textarea id="notes-input" placeholder="粘贴你的笔记内容……&#10;&#10;例如：今天学习了教育技术学的三个核心理论：建构主义认为知识是主动建构的；认知负荷理论强调教学设计要管理三种认知负荷；多媒体学习理论提出双通道假设……"></textarea>
+      <div class="btn-row">
+        <button class="btn btn-pri" onclick="summarizeNotes()" id="btn-notes">🔍 整理笔记</button>
+        <button class="btn btn-sec" onclick="loadNotesDemo()">📋 加载示例</button>
+      </div>
+      <div class="err-box" id="notes-error"></div>
+    </div>
+    <div class="notes-out" id="notes-output">
+      <div class="card">
+        <div class="notes-tbar">
+          <h3 id="notes-title">📄 学习笔记</h3>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-pri btn-sm" onclick="document.getElementById('notes-output').classList.remove('show');document.getElementById('notes-input').scrollIntoView({behavior:'smooth'});document.getElementById('notes-input').focus();">↩ 返回输入</button>
+            <button class="btn btn-sec btn-sm" onclick="copyNotes()">📋 复制笔记</button>
+          </div>
+        </div>
+        <div style="font-size:.8rem;color:var(--tx2);margin-bottom:6px;">📌 提纲</div>
+        <div class="ol" id="notes-outline"></div>
+        <div style="font-size:.8rem;color:var(--tx2);margin-top:14px;margin-bottom:6px;">🔑 关键术语</div>
+        <div id="notes-terms"></div>
+        <div class="notes-summ" style="margin-top:14px;" id="notes-summary"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 成就 ===== -->
+  <div id="achievement-section" style="display:none;">
+    <div class="card">
+      <div class="card-hd">🏆 学习成就</div>
+      <div class="ach-bar">
+        <div class="ach-stat"><div class="num" id="stat-total">0</div><div class="lbl">总完成次数</div></div>
+        <div class="ach-stat"><div class="num" id="stat-streak">0</div><div class="lbl">连续天数</div></div>
+        <div class="ach-stat"><div class="num" id="stat-words">0</div><div class="lbl">累计字数</div></div>
+        <div class="ach-stat"><div class="num" id="stat-tasks">0</div><div class="lbl">拆解任务</div></div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;" id="badge-list">
+        <span class="badge-i lock">🌱 初次使用</span>
+        <span class="badge-i lock">📖 阅读小成</span>
+        <span class="badge-i lock">🎯 任务起步</span>
+        <span class="badge-i lock">🔥 连续2天</span>
+        <span class="badge-i lock">💯 持之以恒</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer class="ft">🦉 启明 AI学习伴侣 · 面向阅读障碍/ADHD学生的智能学习辅助工具 · 教育技术前沿讲座 期末项目</footer>
+
+<!-- Overlays -->
+<div class="confetti-box" id="confetti-container"></div>
+<div class="wpop" id="word-popup"><div class="wc" id="wp-char"></div><div class="wp" id="wp-pinyin"></div></div>
+
+<div class="foc-overlay" id="focus-overlay">
+  <div class="foc-card">
+    <div style="font-size:.82rem;color:var(--sec);margin-bottom:6px;">🔬 逐句聚焦，减少干扰</div>
+    <div class="foc-py" id="focus-pinyin"></div>
+    <div class="foc-sen" id="focus-sentence"></div>
+    <div class="foc-ctr" id="focus-counter">第 1 / 1 句</div>
+    <div class="foc-nav">
+      <button class="btn btn-sec btn-sm" onclick="focusPrev()">◀ 上一句</button>
+      <button class="btn btn-sec btn-sm" onclick="focusNext()">下一句 ▶</button>
+    </div>
+    <button class="btn btn-sec btn-sm" onclick="closeFocusMode()" style="margin-top:14px;">✕ 退出</button>
+  </div>
+</div>
+
+<button class="hist-toggle" onclick="toggleHistory()" id="hist-toggle-btn">📋</button>
+<button class="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" id="scroll-top-btn" title="回到顶部">↑</button>
+<div class="hist-bd" id="history-backdrop" onclick="toggleHistory()"></div>
+<div class="hist-panel" id="history-panel">
+  <h3 style="margin-bottom:12px;font-size:1rem;">📋 使用记录</h3>
+  <button class="btn btn-sec" style="width:100%;margin-bottom:10px;font-size:.8rem;" onclick="clearHistory()">🗑 清空</button>
+  <div id="history-list"><p style="color:var(--tx3);font-size:.82rem;">暂无记录</p></div>
+</div>
+
+<div class="tut-overlay" id="tutorial-overlay" style="display:none;">
+  <div class="tut-card" style="position:relative;">
+    <button onclick="hideTutorial()" style="position:absolute;top:10px;right:14px;background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--tx3);" title="关闭">✕</button>
+    <h2>🦉 欢迎使用启明AI学习伴侣</h2>
+    <div class="tut-step"><span>📖</span><span>在<strong>阅读辅助</strong>粘贴课文，AI简化+拼音+思维导图</span></div>
+    <div class="tut-step"><span>🎯</span><span>在<strong>任务拆解</strong>输入任务，AI拆成微步骤</span></div>
+    <div class="tut-step"><span>💬</span><span>在<strong>AI答疑</strong>提问，AI结合上下文解答</span></div>
+    <div class="tut-step"><span>🃏</span><span>在<strong>知识闪卡</strong>生成闪卡，翻转记忆</span></div>
+    <div class="tut-step"><span>📝</span><span>在<strong>学习笔记</strong>整理知识，结构化复习</span></div>
+    <button class="btn btn-pri" onclick="hideTutorial()" style="margin-top:16px;">开始使用</button>
+  </div>
+</div>
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+// ===================== GLOBAL PROGRESS =====================
+function showGlobalProgress() {
+  const bar = document.getElementById('global-progress');
+  bar.classList.add('running');
+  bar.classList.remove('done');
+}
+function hideGlobalProgress() {
+  const bar = document.getElementById('global-progress');
+  bar.classList.remove('running');
+  bar.classList.add('done');
+  setTimeout(() => bar.classList.remove('done'), 800);
+}
+
+// ===================== TOAST =====================
+function showToast(msg) {
+  let toast = document.getElementById('toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toast';
+    toast.className = 'toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+// ===================== CONNECTION =====================
+const API_BASE = '';
+let serverOnline = false;
+
+function updateConnBanner(status, msg) {
+  const b = document.getElementById('conn-banner');
+  b.className = 'conn-banner ' + status;
+  b.textContent = msg;
+}
+function checkServerConnection() {
+  // AbortSignal.timeout polyfill for older browsers
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  fetch(API_BASE + '/api/health', { signal: controller.signal })
+    .then(r => r.json()).then(() => {
+      clearTimeout(timeout);
+      const wasOffline = !serverOnline;
+      serverOnline = true;
+      document.getElementById('server-status').innerHTML = '<span class="status-dot on"></span> 在线';
+      document.getElementById('server-status').style.color = 'var(--ok)';
+      if (wasOffline) updateConnBanner('ok', '🔗 服务已恢复，所有功能正常可用');
+      else updateConnBanner('ok', '✅ AI后端服务已连接，所有功能正常可用');
+      setTimeout(() => { document.getElementById('conn-banner').style.display = 'none'; }, 3500);
+    }).catch(() => {
+      clearTimeout(timeout);
+      serverOnline = false;
+      document.getElementById('server-status').innerHTML = '<span class="status-dot off"></span> 离线';
+      document.getElementById('server-status').style.color = 'var(--err)';
+      updateConnBanner('err', '⚠️ AI后端未连接，请运行 node server.js 启动服务');
+    });
+}
+
+// ===================== WELCOME BACK =====================
+let wbPrevTab = null;
+let wbPrevActivity = null;
+let wbLastVisible = Date.now();
+function recordActivityContext() {
+  const activePanel = document.querySelector('.panel.on');
+  wbPrevTab = activePanel ? activePanel.id.replace('panel-','') : null;
+  const h = DataLayer.read('qm_history', []);
+  wbPrevActivity = h.length > 0 ? h[0] : null;
+}
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden) {
+    wbLastVisible = Date.now();
+    recordActivityContext();
+  } else {
+    // Only show if gone > 30s
+    if(Date.now() - wbLastVisible > 30000) {
+      showWelcomeBack();
+    }
+  }
+});
+window.addEventListener('pagehide', () => { recordActivityContext(); });
+function showWelcomeBack() {
+  const banner = document.getElementById('wb-banner');
+  const msgEl = document.getElementById('wb-msg');
+  const resumeEl = document.getElementById('wb-resume');
+
+  const tabNames = {
+    reading:'阅读辅助', task:'任务拆解', tutor:'AI答疑',
+    flashcard:'知识闪卡', notes:'学习笔记', dashboard:'学习仪表盘'
+  };
+
+  let msg = '欢迎回来！';
+  if(wbPrevTab && tabNames[wbPrevTab]) {
+    msg = `欢迎回来！你之前在「${tabNames[wbPrevTab]}」`;
+  }
+  msgEl.textContent = msg;
+
+  if(wbPrevActivity && wbPrevActivity.type && wbPrevActivity.data) {
+    resumeEl.style.display = 'inline';
+    resumeEl.textContent = `继续「${wbPrevActivity.data.substring(0,20)}…」`;
+  } else {
+    resumeEl.style.display = 'none';
+  }
+
+  banner.classList.add('show');
+  const secondsGone = Math.round((Date.now()-wbLastVisible)/1000);
+  setTimeout(() => { banner.classList.remove('show'); }, 5000 + Math.min(secondsGone*100, 5000));
+}
+function dismissWBBanner() {
+  document.getElementById('wb-banner').classList.remove('show');
+}
+function resumeLastActivity() {
+  if(wbPrevTab) {
+    switchTab(wbPrevTab);
+    if(wbPrevTab === 'reading') {
+      const el = document.getElementById('reading-results');
+      if(el && el.style.display !== 'none') el.scrollIntoView({behavior:'smooth'});
+    } else if(wbPrevTab === 'task') {
+      const el = document.getElementById('task-results');
+      if(el && el.style.display !== 'none') el.scrollIntoView({behavior:'smooth'});
+    }
+  }
+  dismissWBBanner();
+}
+
+// ===================== LOGIN SESSION =====================
+function loadUserSession() {
+  try {
+    const session = JSON.parse(localStorage.getItem('qm_session'));
+    const badge = document.getElementById('user-badge');
+    if(session && session.username) {
+      const roleEmoji = session.isGuest ? '👤' : (session.role === 'teacher' ? '📚' : '🎒');
+      badge.innerHTML = `${roleEmoji} ${session.username}`;
+      badge.classList.toggle('guest', session.isGuest);
+      badge.href = 'login.html';
+      badge.title = '切换用户';
+    } else {
+      badge.innerHTML = '👤 未登录';
+      badge.classList.add('guest');
+      badge.href = 'login.html';
+    }
+  } catch(e) {}
+}
+
+// ===================== TABS =====================
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  document.getElementById('tab-' + tab).classList.add('on');
+  document.getElementById('panel-' + tab).classList.add('on');
+  if (tab === 'tutor') scrollChatBottom();
+  if (tab === 'dashboard') updateDashboardData();
+  recordActivityContext();
+}
+
+// ===================== HELPERS =====================
+function showLoading(btnId, text) {
+  const btn = document.getElementById(btnId);
+  if (!btn.dataset.origText) btn.dataset.origText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `<span class="dots"><span></span><span></span><span></span></span> ${text}`;
+}
+function hideLoading(btnId) {
+  const btn = document.getElementById(btnId);
+  btn.disabled = false;
+  btn.innerHTML = btn.dataset.origText || btn.innerHTML;
+  delete btn.dataset.origText;
+}
+function showError(elId, msg) {
+  const el = document.getElementById(elId);
+  el.innerHTML = `<span class="err-msg">⚠️ ${msg}</span><button class="err-close" onclick="hideError('${elId}')" title="关闭">✕</button>`;
+  el.classList.add('show');
+  // Auto-dismiss after 8 seconds
+  clearTimeout(el._dismissTimer);
+  el._dismissTimer = setTimeout(() => hideError(elId), 8000);
+}
+function hideError(elId) {
+  const el = document.getElementById(elId);
+  el.classList.remove('show');
+  clearTimeout(el._dismissTimer);
+}
+function escapeXml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function getPinyinLocal(text) {
+  if (!text) return '';
+  try { if (typeof pinyinPro !== 'undefined') return pinyinPro.pinyin(text, { toneType:'symbol' }); } catch(e) {}
+  return text.split('').map(c => /[\u4e00-\u9fff]/.test(c) ? '·' : c).join('');
+}
+
+// ===================== READING =====================
+let currentReadDifficulty = 'basic';
+function setReadDifficulty(level, btn) {
+  currentReadDifficulty = level;
+  document.querySelectorAll('.read-diff-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  try { localStorage.setItem('qm_read_diff', level); } catch(e) {}
+}
+function loadReadDifficulty() {
+  try {
+    const saved = localStorage.getItem('qm_read_diff') || 'basic';
+    currentReadDifficulty = saved;
+    const btns = document.querySelectorAll('.read-diff-btn');
+    btns.forEach(b => {
+      if (b.textContent.includes(saved === 'basic' ? '基础' : saved === 'standard' ? '标准' : '拼音')) b.classList.add('on');
+      else b.classList.remove('on');
+    });
+  } catch(e) {}
+}
+function loadDemoText() {
+  document.getElementById('reading-input').value =
+    '人工智能技术正在深刻改变教育领域的方方面面。自适应学习系统可以根据每个学生的知识水平、学习风格和进度，提供个性化的学习内容和路径推荐。智能辅导系统能够模拟人类教师的角色，为学生提供实时的问题解答和学习指导。虚拟现实和增强现实技术为学生创造了沉浸式的学习体验，使他们能够在虚拟环境中进行实验操作和历史场景重现。然而，技术的应用也面临着数据隐私、数字鸿沟和教师角色转变等诸多挑战。教育工作者需要在拥抱技术创新的同时，始终牢记教育的本质是培养全面发展的人。';
+}
+
+async function processReading() {
+  const input = document.getElementById('reading-input').value.trim();
+  if (!input || input.length < 10) { showError('reading-error', '请输入至少10个字的内容'); return; }
+  hideError('reading-error');
+  showLoading('btn-reading', '思考中...');
+  showGlobalProgress();
+
+  try {
+    const [simplifyRes, mindmapRes] = await Promise.allSettled([
+      fetch(API_BASE + '/api/reading/simplify', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text:input, difficulty:currentReadDifficulty})
+      }).then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))),
+      fetch(API_BASE + '/api/reading/mindmap', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text:input, difficulty:currentReadDifficulty})
+      }).then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
+    ]);
+    hideLoading('btn-reading');
+    hideGlobalProgress();
+
+    const output = document.getElementById('simplified-output');
+    const stats = document.getElementById('reading-stats');
+    if (simplifyRes.status === 'fulfilled' && simplifyRes.value.sentences) {
+      const sentences = simplifyRes.value.sentences;
+      let html = '';
+      for (const s of sentences) {
+        const py = s.pinyin || getPinyinLocal(s.simplified);
+        html += `<div class="stx-sen"><span class="py${s.pinyin?'':' fb'}">${py}</span><span>${s.simplified}</span></div>`;
+      }
+      output.innerHTML = html;
+      stats.innerHTML = `<div class="stat"><strong>${sentences.length}</strong> 短句</div><div class="stat">原 <strong>${input.length}</strong> 字</div><div class="stat tag tag-pri">🤖 AI简化</div><div class="stat tag tag-pur">📝 拼音</div>`;
+    } else {
+      const fallback = input.split(/[。！？!?\n]+/).filter(s => s.trim());
+      let html = '';
+      for (const s of fallback) {
+        html += `<div class="stx-sen"><span class="py fb">${getPinyinLocal(s.trim())}</span><span>${s.trim()}</span></div>`;
+      }
+      output.innerHTML = html;
+      stats.innerHTML = `<div class="stat"><strong>${fallback.length}</strong> 短句</div><div class="stat tag tag-pri">📋 基础拆分</div>`;
+    }
+
+    renderMindMapTree(mindmapRes.status === 'fulfilled' ? mindmapRes.value : null);
+    document.getElementById('reading-results').style.display = 'block';
+    document.getElementById('reading-results').scrollIntoView({behavior:'smooth'});
+    saveHistory('reading', input);
+    recordAchievement('reading', input.length);
+  } catch (err) {
+    hideLoading('btn-reading');
+    hideGlobalProgress();
+    showError('reading-error', `AI服务连接失败：${err.message}。请确认已启动 node server.js`);
+    console.error('Reading error:', err);
+  }
+}
+
+// ===================== MINDMAP (HORIZONTAL) =====================
+function renderMindMapTree(data) {
+  const container = document.getElementById('mindmap-container');
+  const source = document.getElementById('mindmap-source');
+  if (!data || !data.center) {
+    container.innerHTML = '<p style="color:var(--tx3);text-align:center;padding:40px;min-width:300px;">暂无思维导图数据<br><small>请确认后端服务已启动</small></p>';
+    source.textContent = ''; return;
+  }
+  if (data._source === 'ai') { source.textContent = '🤖 AI生成'; source.style.color = 'var(--ok)'; }
+  else { source.textContent = data._note || '📋 本地生成'; source.style.color = 'var(--tx3)'; }
+
+  const branches = data.branches || [];
+  const colors = ['#F26722','#6366F1','#10B981','#0EA5E9','#EF4444','#F59E0B'];
+  const colorBgs = ['#FFF6F0','#EEF2FF','#ECFDF5','#F0F9FF','#FEF2F2','#FFFBEB'];
+
+  // Root
+  let html = '<div class="mm-root-col"><div class="mm-root-card"><span style="font-size:1.3rem;display:block;">🧠</span>' + escapeXml(data.center) + '</div></div>';
+
+  if (branches.length === 0) {
+    html += '<div class="mm-arrow-col"></div><div class="mm-branch-col"><div class="mm-branch-node" style="border-color:var(--line2);background:var(--surf2);">暂无分支</div></div>';
+  } else {
+    html += '<div class="mm-arrow-col"></div>';
+
+    // Branch column
+    html += '<div class="mm-branch-col">';
+    for (let i = 0; i < branches.length; i++) {
+      const b = branches[i];
+      const c = b.color || colors[i % colors.length];
+      const bg = colorBgs[i % colorBgs.length];
+      const kidCount = (b.children && b.children.length) || 0;
+      html += '<div class="mm-branch-node" style="border-color:' + c + ';background:' + bg + ';color:' + c + ';" onclick="toggleMMBranch(this)">'
+        + escapeXml(b.name || '')
+        + (kidCount > 0 ? '<span class="mm-b-count">' + kidCount + ' 个子项</span>' : '')
+        + '</div>';
+    }
+    html += '</div>';
+
+    // Arrow 2
+    html += '<div class="mm-arrow2"></div>';
+
+    // Leaf column
+    html += '<div class="mm-leaf-col">';
+    for (let i = 0; i < branches.length; i++) {
+      const b = branches[i];
+      const c = b.color || colors[i % colors.length];
+      const children = b.children || [];
+      html += '<div class="mm-leaf-group" id="mm-leaf-grp-' + i + '">';
+      if (children.length > 0) {
+        for (let j = 0; j < Math.min(children.length, 6); j++) {
+          html += '<div class="mm-leaf-chip"><span class="mm-leaf-dot" style="background:' + c + ';"></span>' + escapeXml(children[j] || '') + '</div>';
+        }
+      } else {
+        html += '<div class="mm-leaf-chip" style="opacity:.5;"><span class="mm-leaf-dot" style="background:var(--tx3);"></span>查看详情</div>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+
+  container.innerHTML = html;
+
+  // Highlight first branch by default
+  const firstBranch = container.querySelector('.mm-branch-node');
+  if (firstBranch) firstBranch.classList.add('mm-active');
+}
+
+function toggleMMBranch(nodeEl) {
+  // Remove active from all
+  const allNodes = nodeEl.parentElement.querySelectorAll('.mm-branch-node');
+  allNodes.forEach(n => n.classList.remove('mm-active'));
+  // Mark clicked as active
+  nodeEl.classList.add('mm-active');
+
+  // Highlight corresponding leaf group
+  const leafCol = nodeEl.parentElement.nextElementSibling?.nextElementSibling;
+  if (leafCol) {
+    const groups = leafCol.querySelectorAll('.mm-leaf-group');
+    groups.forEach(g => { g.style.opacity = '0.4'; g.style.transform = ''; });
+    const idx = Array.from(nodeEl.parentElement.children).indexOf(nodeEl);
+    if (groups[idx]) { groups[idx].style.opacity = '1'; groups[idx].style.transform = 'scale(1.03)'; groups[idx].style.transition = 'all .25s'; }
+  }
+}
+
+function exportMindmapText() {
+  const container = document.getElementById('mindmap-container');
+  if (!container || !container.innerText.trim() || container.innerText.includes('暂无')) {
+    alert('请先生成思维导图'); return;
+  }
+  const blob = new Blob([container.innerText], {type:'text/plain;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '思维导图_启明AI.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('✅ 已导出思维导图');
+}
+
+// Mindmap scroll gradient listeners
+function initMindmapScrollListeners() {
+  document.querySelectorAll('.mm-h-wrap').forEach(wrap => {
+    const updateGradients = () => {
+      const hasRight = wrap.scrollWidth > wrap.clientWidth + wrap.scrollLeft + 5;
+      const hasLeft = wrap.scrollLeft > 5;
+      wrap.classList.toggle('has-scroll-right', hasRight);
+      wrap.classList.toggle('has-scroll-left', hasLeft);
+    };
+    wrap.addEventListener('scroll', updateGradients, {passive:true});
+    // Initial check + on mindmap render
+    updateGradients();
+    const observer = new MutationObserver(updateGradients);
+    observer.observe(wrap, {childList:true, subtree:true});
+  });
+}
+
+// ===================== SPEECH (豆包 TTS) =====================
+let speechAudio = null, speechSentences = [];
+
+/** 播放整段文本的TTS语音 */
+async function speakText() {
+  // 收集所有句子
+  const sentenceEls = document.querySelectorAll('#simplified-output .stx-sen');
+  speechSentences = [];
+  sentenceEls.forEach(el => {
+    const textEl = el.querySelector('span:last-child');
+    if (textEl && textEl.textContent.trim()) speechSentences.push({ element: el, text: textEl.textContent.trim() });
+  });
+
+  const fullText = speechSentences.length > 0
+    ? speechSentences.map(s => s.text).join('，')
+    : document.getElementById('reading-input').value.trim();
+
+  if (!fullText) { alert('没有可朗读的文本'); return; }
+
+  // Truncate to 450 chars to avoid server 400 (server caps at 500 + markdown overhead)
+  const ttsText = fullText.length > 450 ? fullText.slice(0, 450) + '…' : fullText;
+
+  // 显示加载状态
+  const btnSpeak = document.getElementById('btn-speak');
+  const btnStop = document.getElementById('btn-stop-speak');
+  btnSpeak.style.display = 'none';
+  btnStop.style.display = 'inline-flex';
+  btnStop.textContent = '⏳ 合成中…';
+
+  try {
+    const resp = await fetch(API_BASE + '/api/speech', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: ttsText })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ error: '语音合成失败' }));
+      throw new Error(err.error || '语音合成失败');
+    }
+
+    const audioBlob = await resp.blob();
+    const audioUrl = URL.createObjectURL(audioBlob);
+
+    // 清理旧音频
+    if (speechAudio) { speechAudio.pause(); URL.revokeObjectURL(speechAudio.src); }
+
+    speechAudio = new Audio(audioUrl);
+    btnStop.textContent = '⏹ 停止';
+
+    // 高亮所有正在朗读的句子
+    speechSentences.forEach(s => s.element.classList.add('speaking'));
+
+    speechAudio.onended = () => { stopSpeak(); };
+    speechAudio.onerror = () => {
+      stopSpeak();
+      showError('reading-error', '音频播放失败，请重试');
+    };
+    speechAudio.play();
+
+  } catch (err) {
+    stopSpeak();
+    showError('reading-error', '语音合成失败: ' + err.message);
+  }
+}
+
+function stopSpeak() {
+  if (speechAudio) {
+    speechAudio.pause();
+    URL.revokeObjectURL(speechAudio.src);
+    speechAudio = null;
+  }
+  speechSentences.forEach(s => s.element.classList.remove('speaking'));
+  document.getElementById('btn-speak').style.display = 'inline-flex';
+  document.getElementById('btn-stop-speak').style.display = 'none';
+}
+
+// ===================== TASK =====================
+function loadDemoTask() { document.getElementById('task-input').value = '准备《教育技术学》期末考试，需要复习教材1-3章的重点内容'; }
+
+async function breakTask() {
+  const input = document.getElementById('task-input').value.trim();
+  if (!input || input.length < 4) { showError('task-error', '请输入至少4个字描述任务'); return; }
+  hideError('task-error');
+  showLoading('btn-break', '拆解中...');
+  showGlobalProgress();
+
+  try {
+    const res = await fetch(API_BASE + '/api/task/break', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({task:input, difficulty:currentDifficulty, goal:getCurrentGoal()})
+    });
+    if (!res.ok) { const ed = await res.json().catch(()=>({})); throw new Error(ed.error || `服务器错误(${res.status})`); }
+    const data = await res.json();
+    hideLoading('btn-break');
+    hideGlobalProgress();
+    if (!data.steps || !Array.isArray(data.steps)) throw new Error('AI返回数据异常');
+
+    const taskList = document.getElementById('task-list');
+    taskList.innerHTML = '';
+    data.steps.forEach((s, i) => {
+      const li = document.createElement('li'); li.className = 'task-item';
+      li.innerHTML = `<div class="task-cb" onclick="toggleTask(this, ${i})" id="cb-${i}">✓</div>
+        <div style="flex:1"><span class="task-step">第${i+1}步</span><span class="task-tx">${escapeXml(s.step)}</span>
+        ${s.encouragement ? `<span class="task-enc">💬 ${escapeXml(s.encouragement)}</span>` : ''}</div>`;
+      taskList.appendChild(li);
+    });
+    document.getElementById('task-results').style.display = 'block';
+    document.getElementById('celebration').classList.remove('show');
+    document.getElementById('task-progress-fill').style.width = '0%';
+    document.getElementById('task-progress-label').textContent = `已拆为 ${data.steps.length} 个微任务，开始吧！`;
+    document.getElementById('task-results').scrollIntoView({behavior:'smooth'});
+    saveHistory('task', input);
+    recordAchievement('task', data.steps.length);
+  } catch (err) {
+    hideLoading('btn-break');
+    hideGlobalProgress();
+    showError('task-error', `AI服务连接失败：${err.message}`);
+  }
+}
+
+function toggleTask(cb, index) {
+  cb.classList.toggle('chk');
+  cb.parentElement.classList.toggle('done');
+  cb.style.transform = 'scale(1.2)';
+  setTimeout(() => cb.style.transform = 'scale(1)', 200);
+  updateTaskProgress();
+  const allCB = document.querySelectorAll('.task-cb');
+  if (Array.from(allCB).every(c => c.classList.contains('chk')) && allCB.length > 0) celebrate();
+}
+function updateTaskProgress() {
+  const total = document.querySelectorAll('.task-cb').length;
+  const done = document.querySelectorAll('.task-cb.chk').length;
+  const pct = total > 0 ? Math.round((done/total)*100) : 0;
+  document.getElementById('task-progress-fill').style.width = pct + '%';
+  const label = document.getElementById('task-progress-label');
+  if (done === 0) label.textContent = '准备开始';
+  else if (done === 1) label.textContent = '好的开始！第一步完成 ✅';
+  else if (done >= Math.ceil(total/2)) label.textContent = '已过半，继续加油！💪';
+  else if (done === total - 1) label.textContent = '还剩最后一步！🔥';
+  else if (done === total) label.textContent = `全部完成！${total}/${total} 🎉`;
+  else label.textContent = `已完成 ${done}/${total} 个微任务`;
+}
+function checkAllTasks() {
+  document.querySelectorAll('.task-cb').forEach(cb => {
+    if (!cb.classList.contains('chk')) { cb.classList.add('chk'); cb.parentElement.classList.add('done'); }
+  });
+  updateTaskProgress(); celebrate();
+}
+function resetTasks() {
+  document.querySelectorAll('.task-cb').forEach(cb => { cb.classList.remove('chk'); cb.parentElement.classList.remove('done'); });
+  document.getElementById('task-progress-fill').style.width = '0%';
+  document.getElementById('task-progress-label').textContent = '重新开始！💪';
+  document.getElementById('celebration').classList.remove('show');
+  // Reset step-by-step state
+  stepFocusIndex = 0;
+  if(stepMode) updateStepFocus();
+}
+
+// ===================== STEP-BY-STEP MODE =====================
+let stepMode = false;
+let stepFocusIndex = 0;
+
+function toggleStepMode() {
+  stepMode = !stepMode;
+  const toggle = document.getElementById('step-mode-toggle');
+  const overlay = document.getElementById('step-focus-overlay');
+  const list = document.getElementById('task-list');
+
+  toggle.classList.toggle('on', stepMode);
+  overlay.classList.toggle('on', stepMode);
+
+  if(stepMode) {
+    list.style.display = 'none';
+    stepFocusIndex = 0;
+    updateStepFocus();
+    document.getElementById('step-focus-overlay').scrollIntoView({behavior:'smooth'});
+  } else {
+    list.style.display = '';
+    // Sync completed steps from step mode to checkboxes
+    document.querySelectorAll('.task-cb').forEach((cb, i) => {
+      if(i < stepFocusIndex) { cb.classList.add('chk'); cb.parentElement.classList.add('done'); }
+    });
+    updateTaskProgress();
+  }
+  try { localStorage.setItem('qm_step_mode', String(stepMode)); } catch(e) {}
+}
+function loadStepMode() {
+  try {
+    stepMode = localStorage.getItem('qm_step_mode') === 'true';
+    const toggle = document.getElementById('step-mode-toggle');
+    const overlay = document.getElementById('step-focus-overlay');
+    const list = document.getElementById('task-list');
+    if(stepMode) {
+      toggle.classList.add('on');
+      overlay.classList.add('on');
+      list.style.display = 'none';
+    }
+  } catch(e) {}
+}
+function updateStepFocus() {
+  const items = document.querySelectorAll('#task-list .task-item');
+  const total = items.length;
+
+  if(total===0) {
+    document.getElementById('step-focus-text').textContent = '请先生成微任务清单';
+    document.getElementById('step-nav-progress').textContent = '0 / 0';
+    return;
+  }
+
+  if(stepFocusIndex >= total) {
+    // All done
+    document.getElementById('step-focus-step').textContent = '🎉 全部完成！';
+    document.getElementById('step-focus-text').textContent = '太棒了！你已经完成了所有步骤！';
+    document.getElementById('step-focus-enc').style.display = 'block';
+    document.getElementById('step-focus-enc').textContent = '🏆 坚持完成每一步，你比自己想象的更厉害！';
+    document.getElementById('step-nav-progress').textContent = `${total} / ${total}`;
+    document.getElementById('step-next-btn').textContent = '🎉 全部完成';
+    document.getElementById('step-next-btn').disabled = true;
+    document.getElementById('step-prev-btn').disabled = false;
+    return;
+  }
+
+  const item = items[stepFocusIndex];
+  const stepLabel = item.querySelector('.task-step');
+  const stepText = item.querySelector('.task-tx');
+  const stepEnc = item.querySelector('.task-enc');
+
+  document.getElementById('step-focus-step').textContent = stepLabel ? stepLabel.textContent : `第${stepFocusIndex+1}步`;
+  document.getElementById('step-focus-text').textContent = stepText ? stepText.textContent : '';
+  document.getElementById('step-nav-progress').textContent = `${stepFocusIndex+1} / ${total}`;
+
+  if(stepEnc && stepEnc.textContent) {
+    document.getElementById('step-focus-enc').style.display = 'inline-block';
+    document.getElementById('step-focus-enc').textContent = stepEnc.textContent;
+  } else {
+    document.getElementById('step-focus-enc').style.display = 'none';
+  }
+
+  document.getElementById('step-next-btn').textContent = stepFocusIndex === total-1 ? '🎉 完成最后一步' : '完成 ✓';
+  document.getElementById('step-next-btn').disabled = false;
+  document.getElementById('step-prev-btn').disabled = stepFocusIndex === 0;
+
+  // Update done list
+  const doneList = document.getElementById('step-done-list');
+  if(stepFocusIndex > 0) {
+    let html = '<div style="font-size:.7rem;color:var(--tx3);margin:4px 0;">已完成：</div>';
+    for(let i=0; i<stepFocusIndex; i++) {
+      html += `<div class="step-done-item">✅ ${items[i].querySelector('.task-tx')?.textContent||'第'+(i+1)+'步'}</div>`;
+    }
+    doneList.innerHTML = html;
+    doneList.style.display = '';
+  } else {
+    doneList.innerHTML = '';
+    doneList.style.display = 'none';
+  }
+}
+function stepNext() {
+  const items = document.querySelectorAll('#task-list .task-item');
+  if(stepFocusIndex < items.length) {
+    // Mark current as done
+    const cb = document.getElementById('cb-'+stepFocusIndex);
+    if(cb) { cb.classList.add('chk'); items[stepFocusIndex].classList.add('done'); }
+    stepFocusIndex++;
+    updateStepFocus();
+    updateTaskProgress();
+    // Check if all done
+    if(stepFocusIndex >= items.length && items.length > 0) {
+      celebrate();
+    }
+  }
+}
+function stepPrev() {
+  if(stepFocusIndex > 0) {
+    // Unmark previous
+    const cb = document.getElementById('cb-'+(stepFocusIndex-1));
+    const items = document.querySelectorAll('#task-list .task-item');
+    if(cb) { cb.classList.remove('chk'); items[stepFocusIndex-1].classList.remove('done'); }
+    stepFocusIndex--;
+    updateStepFocus();
+    updateTaskProgress();
+  }
+}
+
+// ===================== CELEBRATION =====================
+function celebrate() {
+  // Auto-stop Pomodoro if running
+  if (pomodoroInterval) { clearInterval(pomodoroInterval); pomodoroInterval = null; }
+  if (pomodoroState !== 'idle') {
+    pomodoroState = 'idle';
+    const pbtn = document.getElementById('pomodoro-btn');
+    if (pbtn) { pbtn.className = 'pom idle'; pbtn.innerHTML = '⏱ 计时 <span class="pom-display" id="pomodoro-display">10:00</span>'; }
+  }
+  const msgs = [
+    {emoji:'🌟',msg:'太棒了！全部完成！',sub:'你比自己想象的更厉害！'},
+    {emoji:'🎉',msg:'恭喜你！任务达成！',sub:'每一小步都是成长的一大步！'},
+    {emoji:'🏆',msg:'你是最棒的！',sub:'坚持到底就是胜利！'},
+    {emoji:'🌈',msg:'完美收官！',sub:'大任务也没那么可怕对吧？'},
+    {emoji:'⭐',msg:'全星通过！',sub:'你已经走完了全程！'}
+  ];
+  const m = msgs[Math.floor(Math.random()*msgs.length)];
+  document.getElementById('celebration-emoji').textContent = m.emoji;
+  document.getElementById('celebration-msg').textContent = m.msg;
+  document.getElementById('celebration-sub').textContent = m.sub;
+  document.getElementById('celebration').classList.add('show');
+  document.getElementById('celebration').scrollIntoView({behavior:'smooth'});
+  spawnConfetti(); showReflection();
+}
+function spawnConfetti() {
+  const container = document.getElementById('confetti-container');
+  const colors = ['#F26722','#F59E0B','#10B981','#6366F1','#0EA5E9','#EF4444','#FF7B42','#73D2DE'];
+  for (let i=0;i<50;i++) {
+    const piece = document.createElement('div'); piece.className = 'confetti-p';
+    piece.style.left = Math.random()*100+'%'; piece.style.top = -(Math.random()*80)+'px';
+    piece.style.backgroundColor = colors[Math.floor(Math.random()*colors.length)];
+    piece.style.width = (6+Math.random()*8)+'px'; piece.style.height = (6+Math.random()*8)+'px';
+    piece.style.animationDelay = Math.random()*.6+'s';
+    piece.style.animationDuration = (1+Math.random()*1.8)+'s';
+    container.appendChild(piece); setTimeout(() => piece.remove(), 3000);
+  }
+}
+
+// ===================== REFLECTION =====================
+function showReflection() {
+  const goal = getCurrentGoal();
+  const dl = {easy:'简单',medium:'中等',hard:'困难'};
+  document.getElementById('reflection-q1').innerHTML = `💭 <strong>回顾目标：</strong>你设定了"<em>${goal||'完成这个任务'}</em>"（${dl[currentDifficulty]||'简单'}难度）。完成得怎么样？`;
+  document.getElementById('reflection-q2').innerHTML = `🔍 <strong>策略反思：</strong>微步骤方法对你有帮助吗？哪步最难、哪步最简单？`;
+  document.getElementById('reflection-q3').innerHTML = `📈 <strong>成长记录：</strong>这次经历已记录。下次可以挑战更高难度！`;
+  const panel = document.getElementById('reflection-panel'); panel.classList.add('show');
+  setTimeout(() => panel.scrollIntoView({behavior:'smooth'}), 500);
+}
+function closeReflection() { document.getElementById('reflection-panel').classList.remove('show'); }
+
+// ===================== FOCUS =====================
+let focusSentences=[], focusPinyins=[], focusIndex=0;
+function openFocusMode() {
+  const sentences = document.querySelectorAll('#simplified-output .stx-sen');
+  if (sentences.length === 0) { alert('请先生成阅读结果'); return; }
+  focusSentences=[]; focusPinyins=[];
+  sentences.forEach(s => {
+    const te = s.querySelector('span:last-child'), pe = s.querySelector('.py');
+    focusSentences.push(te?te.textContent:''); focusPinyins.push(pe?pe.textContent:'');
+  });
+  focusIndex=0; updateFocusDisplay();
+  document.getElementById('focus-overlay').classList.add('show');
+  document.addEventListener('keydown', focusKeyHandler);
+}
+function closeFocusMode() {
+  document.getElementById('focus-overlay').classList.remove('show');
+  document.removeEventListener('keydown', focusKeyHandler);
+}
+function updateFocusDisplay() {
+  document.getElementById('focus-sentence').textContent = focusSentences[focusIndex]||'';
+  document.getElementById('focus-pinyin').textContent = focusPinyins[focusIndex]||'';
+  document.getElementById('focus-counter').textContent = `第 ${focusIndex+1} / ${focusSentences.length} 句`;
+}
+function focusPrev() { if(focusIndex>0){focusIndex--;updateFocusDisplay();} }
+function focusNext() { if(focusIndex<focusSentences.length-1){focusIndex++;updateFocusDisplay();} }
+function focusKeyHandler(e) { if(e.key==='ArrowLeft')focusPrev(); else if(e.key==='ArrowRight')focusNext(); else if(e.key==='Escape')closeFocusMode(); }
+
+// ===================== POMODORO =====================
+let pomodoroState='idle', pomodoroSeconds=600, pomodoroInterval=null, pomodoroTotal=600;
+function togglePomodoro() {
+  const btn = document.getElementById('pomodoro-btn');
+  if (pomodoroState==='idle') {
+    pomodoroState='running'; pomodoroSeconds=pomodoroTotal;
+    btn.className='pom run'; btn.innerHTML='⏱ 进行中 <span class="pom-display" id="pomodoro-display">10:00</span>';
+    updatePomodoroDisplay(); pomodoroInterval=setInterval(pomodoroTick,1000);
+  } else if (pomodoroState==='running') {
+    pomodoroState='paused'; btn.className='pom pause';
+    btn.innerHTML='⏸ 暂停 <span class="pom-display" id="pomodoro-display">'+formatPomodoro(pomodoroSeconds)+'</span>';
+    clearInterval(pomodoroInterval);
+  } else if (pomodoroState==='paused') {
+    pomodoroState='running'; btn.className='pom run';
+    btn.innerHTML='⏱ 进行中 <span class="pom-display" id="pomodoro-display">'+formatPomodoro(pomodoroSeconds)+'</span>';
+    pomodoroInterval=setInterval(pomodoroTick,1000);
+  }
+}
+function pomodoroTick() { pomodoroSeconds--; if(pomodoroSeconds<=0){pomodoroFinished();return;} updatePomodoroDisplay(); }
+function updatePomodoroDisplay() { const d=document.getElementById('pomodoro-display'); if(d)d.textContent=formatPomodoro(pomodoroSeconds); }
+function formatPomodoro(sec) { const m=Math.floor(sec/60),s=sec%60; return m+':'+(s<10?'0':'')+s; }
+function pomodoroFinished() {
+  clearInterval(pomodoroInterval); pomodoroState='idle';
+  const btn=document.getElementById('pomodoro-btn'); btn.className='pom idle';
+  btn.innerHTML='⏱ 计时 <span class="pom-display" id="pomodoro-display">10:00</span>';
+  const label=document.getElementById('task-progress-label');
+  label.textContent='⏰ 时间到！休息一下~'; label.style.color='var(--pri)';
+  setTimeout(()=>{label.style.color='var(--tx2)';},3000);
+  // Persist pomodoro record
+  const minutes = Math.round(pomodoroTotal / 60);
+  const goal = getCurrentGoal() || '专注学习';
+  saveHistory('pomodoro', goal + ' · ' + minutes + '分钟');
+  recordAchievement('pomodoro', minutes);
+  savePomodoroLog(minutes, goal);
+}
+function savePomodoroLog(minutes, goal) {
+  const log = DataLayer.read('qm_pomodoro_log', []);
+  log.unshift({ date: new Date().toISOString(), minutes, goal });
+  if (log.length > 100) log.length = 100;
+  DataLayer.save('qm_pomodoro_log', log);
+}
+window.addEventListener('beforeunload',()=>{if(pomodoroInterval)clearInterval(pomodoroInterval);});
+
+// ===================== DIFFICULTY / GOAL =====================
+let currentDifficulty='easy';
+function setDifficulty(level, btn) {
+  currentDifficulty=level;
+  document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+function getCurrentGoal() { return document.getElementById('goal-input')?.value?.trim()||''; }
+
+// ===================== A11Y =====================
+let currentFontSize=16, currentLineHeight=1.75, lineHeightMode=0;
+function changeFontSize(delta) {
+  currentFontSize=Math.max(12,Math.min(24,currentFontSize+delta*2));
+  document.querySelector('.wrap').style.fontSize=currentFontSize+'px';
+  const ind=document.getElementById('fs-indicator');
+  if(currentFontSize<=14)ind.textContent='小'; else if(currentFontSize<=16)ind.textContent='标准';
+  else if(currentFontSize<=20)ind.textContent='大'; else ind.textContent='超大';
+  saveA11y();
+}
+function toggleLineHeight() {
+  lineHeightMode=(lineHeightMode+1)%3; currentLineHeight=[1.75,2.15,2.55][lineHeightMode];
+  document.querySelector('.wrap').style.lineHeight=currentLineHeight;
+  saveA11y();
+}
+function saveA11y() { try{localStorage.setItem('qm_a11y',JSON.stringify({fontSize:currentFontSize,lineHeight:currentLineHeight,lineHeightMode}));}catch(e){} }
+function loadA11y() {
+  try{
+    const s=JSON.parse(localStorage.getItem('qm_a11y'));
+    if(s){currentFontSize=s.fontSize||16;currentLineHeight=s.lineHeight||1.75;lineHeightMode=s.lineHeightMode||0;
+    document.querySelector('.wrap').style.fontSize=currentFontSize+'px';
+    document.querySelector('.wrap').style.lineHeight=currentLineHeight;
+    const ind=document.getElementById('fs-indicator');
+    if(currentFontSize<=14)ind.textContent='小';else if(currentFontSize<=16)ind.textContent='标准';
+    else if(currentFontSize<=20)ind.textContent='大';else ind.textContent='超大';}
+  }catch(e){}
+}
+
+// ===================== FONT MODE =====================
+let fontMode = 0; // 0=系统默认, 1=OpenDyslexic
+const FONT_LABELS = ['Aa 字体', 'Aa 阅读字体'];
+function cycleFontMode() {
+  fontMode = (fontMode + 1) % 2;
+  document.body.classList.toggle('font-dyslexic', fontMode === 1);
+  const btn = document.getElementById('btn-font-mode');
+  if(btn) { btn.textContent = FONT_LABELS[fontMode]; btn.classList.toggle('on', fontMode===1); }
+  try { localStorage.setItem('qm_font', String(fontMode)); } catch(e) {}
+}
+function loadFontMode() {
+  try {
+    const saved = parseInt(localStorage.getItem('qm_font') || '0');
+    fontMode = saved === 1 ? 1 : 0;
+    document.body.classList.toggle('font-dyslexic', fontMode === 1);
+    const btn = document.getElementById('btn-font-mode');
+    if(btn) { btn.textContent = FONT_LABELS[fontMode]; btn.classList.toggle('on', fontMode===1); }
+  } catch(e) {}
+}
+
+// ===================== VISUAL MODE (3-way: light/dark/hc) =====================
+let visualMode = 0; // 0=light, 1=dark, 2=hc
+const VISUAL_LABELS = ['☀️ 浅色', '🌙 暗色', '🌓 高对比'];
+const VISUAL_TITLES = ['切换暗色模式', '切换高对比模式', '切换浅色模式'];
+
+function cycleVisualMode() {
+  // Remove all visual mode classes
+  document.body.classList.remove('dark', 'hc');
+  visualMode = (visualMode + 1) % 3;
+  if (visualMode === 1) document.body.classList.add('dark');
+  if (visualMode === 2) document.body.classList.add('hc');
+  const btn = document.getElementById('btn-visual-mode');
+  if (btn) {
+    btn.innerHTML = VISUAL_LABELS[visualMode];
+    btn.title = VISUAL_TITLES[visualMode];
+  }
+  try { localStorage.setItem('qm_vmode', String(visualMode)); } catch(e) {}
+}
+
+function loadVisualMode() {
+  try {
+    const saved = parseInt(localStorage.getItem('qm_vmode') || '0');
+    if (saved >= 0 && saved <= 2) {
+      document.body.classList.remove('dark', 'hc');
+      visualMode = saved;
+      if (saved === 1) document.body.classList.add('dark');
+      if (saved === 2) document.body.classList.add('hc');
+      const btn = document.getElementById('btn-visual-mode');
+      if (btn) { btn.innerHTML = VISUAL_LABELS[visualMode]; btn.title = VISUAL_TITLES[visualMode]; }
+    }
+  } catch(e) {}
+}
+
+// Keep old functions for backward compat
+function toggleHighContrast() { cycleVisualMode(); }
+
+// ===================== MOBILE HAMBURGER =====================
+function toggleBarMenu() {
+  const items = document.getElementById('bar-items');
+  const hamburger = document.getElementById('bar-hamburger');
+  if (items) {
+    items.classList.toggle('expanded');
+    hamburger.textContent = items.classList.contains('expanded') ? '✕' : '☰';
+  }
+}
+
+// ===================== SCROLL TO TOP =====================
+function initScrollTopButton() {
+  const btn = document.getElementById('scroll-top-btn');
+  if (!btn) return;
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        btn.classList.toggle('visible', window.scrollY > 400);
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, { passive: true });
+}
+
+// ===================== FLASHCARD SOUND =====================
+let audioCtx = null;
+function playFlipSound() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1760, audioCtx.currentTime + 0.08);
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+    osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.2);
+  } catch(e) { /* Silently fail - audio is a nice-to-have */ }
+}
+
+// ===================== HIGH CONTRAST (legacy) =====================
+let highContrast = false;
+function loadContrast() {
+  // Migrate old qm_contrast setting to new qm_vmode
+  try {
+    if (localStorage.getItem('qm_contrast') === '1') {
+      localStorage.removeItem('qm_contrast');
+      localStorage.setItem('qm_vmode', '2');
+    }
+  } catch(e) {}
+  loadVisualMode();
+}
+
+// ===================== WORD POPUP =====================
+function initWordPronunciation() {
+  const output=document.getElementById('simplified-output'); if(!output)return;
+  output.addEventListener('click',function(e){
+    const sel=e.target.closest('.stx-sen'); if(!sel)return;
+    const ts=sel.querySelector('span:last-child'); if(!ts)return;
+    const word=ts.textContent.trim(); if(!word)return;
+    const popup=document.getElementById('word-popup');
+    document.getElementById('wp-char').textContent=word.length>6?word.slice(0,6)+'…':word;
+    document.getElementById('wp-pinyin').textContent=getPinyinLocal(word);
+    popup.style.display='block';
+    const pw = popup.offsetWidth || 120;
+    const ph = popup.offsetHeight || 60;
+    popup.style.left = Math.max(8, Math.min(e.clientX, window.innerWidth - pw - 8)) + 'px';
+    popup.style.top = Math.max(8, Math.min(e.clientY - ph - 12, window.innerHeight - ph - 8)) + 'px';
+    clearTimeout(popup._timeout); popup._timeout=setTimeout(()=>{popup.style.display='none';},2500);
+    if('speechSynthesis' in window){
+      window.speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(word);
+      u.lang='zh-CN';u.rate=0.7;u.pitch=1.0;
+      const voices=speechSynthesis.getVoices(); const zv=voices.find(v=>v.lang.startsWith('zh'));
+      if(zv)u.voice=zv; speechSynthesis.speak(u);
+    }
+  });
+}
+
+// ===================== 云端数据同步层 (飞书多维表格) =====================
+const DataLayer = {
+  ENABLED: true,
+  _cloudKeys: ['qm_ach', 'qm_history', 'qm_flashcard_decks', 'qm_pomodoro_log'],
+
+  // 获取当前用户的认证令牌
+  _getToken() {
+    try {
+      const s = JSON.parse(localStorage.getItem('qm_session'));
+      return s && s.token ? s.token : null;
+    } catch(e) { return null; }
+  },
+
+  // 构建带认证的请求头
+  _authHeaders() {
+    const h = { 'Content-Type': 'application/json' };
+    const token = this._getToken();
+    if (token) h['Authorization'] = `Bearer ${token}`;
+    return h;
+  },
+
+  // 初始化：从云端拉取全部数据到 localStorage
+  async init() {
+    if (!this.ENABLED) return;
+    try {
+      const resp = await fetch('/api/sync/load-all', { method: 'POST', headers: this._authHeaders() });
+      if (!resp.ok) { console.warn('[DataLayer] 云端连接失败，使用本地缓存'); return; }
+      const result = await resp.json();
+      let synced = 0;
+      for (const [key, data] of Object.entries(result.data || {})) {
+        if (data !== null && data !== undefined) {
+          localStorage.setItem(key, JSON.stringify(data));
+          synced++;
+        }
+      }
+      console.log(`[DataLayer] ✅ 云端同步完成 (${synced}/${this._cloudKeys.length})`);
+    } catch (e) {
+      console.warn('[DataLayer] 云端不可用，降级到本地缓存:', e.message);
+    }
+  },
+
+  // 保存：本地同步写入 + 云端异步推送
+  save(key, data) {
+    try { localStorage.setItem(key, JSON.stringify(data)); } catch (e) {}
+    if (this.ENABLED && this._cloudKeys.includes(key)) {
+      this._pushToCloud(key, data);
+    }
+  },
+
+  // 读取（仅读本地——云端数据已在 init 时同步到本地）
+  read(key, fallback = null) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (e) { return fallback; }
+  },
+
+  // 删除
+  remove(key) {
+    try { localStorage.removeItem(key); } catch (e) {}
+    if (this.ENABLED && this._cloudKeys.includes(key)) {
+      this._pushToCloud(key, []); // 空数组触发云端清空
+    }
+  },
+
+  async _pushToCloud(key, data) {
+    try {
+      const resp = await fetch('/api/sync/save', {
+        method: 'POST',
+        headers: this._authHeaders(),
+        body: JSON.stringify({ key, data })
+      });
+      if (resp.ok) { console.log(`[DataLayer] 📱→☁ ${key}`); }
+      else { const err = await resp.json().catch(() => ({})); console.warn(`[DataLayer] 推送失败 ${key}:`, err.error || resp.status); }
+    } catch (e) { console.warn(`[DataLayer] 推送失败 ${key}:`, e.message); }
+  }
+};
+
+// ===================== HISTORY =====================
+function toggleHistory() {
+  const p=document.getElementById('history-panel'), b=document.getElementById('history-backdrop');
+  p.classList.toggle('open'); b.classList.toggle('show'); if(p.classList.contains('open'))renderHistory();
+}
+function saveHistory(type, data) {
+  const h = DataLayer.read('qm_history', []);
+  h.unshift({type,data,time:new Date().toLocaleString('zh-CN')});
+  if(h.length>50)h.length=50;
+  DataLayer.save('qm_history', h);
+  showToast('✅ 已保存到使用记录');
+  updateHistoryBadge();
+  updateDashboardData();
+}
+function updateHistoryBadge() {
+  const h = DataLayer.read('qm_history', []);
+  const btn=document.getElementById('hist-toggle-btn');
+  if(btn){ btn.textContent=h.length>0?'📋'+h.length:'📋'; }
+}
+function renderHistory() {
+  const list=document.getElementById('history-list');
+  const h = DataLayer.read('qm_history', []);
+  if(h.length===0){list.innerHTML='<p style="color:var(--tx3);text-align:center;padding:24px 0;">📭 暂无记录<br><small>完成阅读、任务等操作后会自动保存</small></p>';return;}
+  const typeMap = {
+    reading: {icon:'📖', tag:'阅读辅助', cls:'tag-pri'},
+    task: {icon:'🎯', tag:'任务拆解', cls:'tag-pur'},
+    flashcard: {icon:'🃏', tag:'知识闪卡', cls:'tag-ok'},
+    notes: {icon:'📝', tag:'学习笔记', cls:'tag-pri'},
+    tutor: {icon:'💬', tag:'AI答疑', cls:'tag-pur'},
+    pomodoro: {icon:'⏱', tag:'专注计时', cls:'tag-ok'}
+  };
+  list.innerHTML=h.map((h,i)=>{
+    const t = typeMap[h.type] || {icon:'📋', tag:h.type, cls:'tag-pri'};
+    return `<div class="hist-item" onclick="restoreHistory(${i})">
+      <span class="tag ${t.cls}">${t.icon} ${t.tag}</span>
+      <span class="time">${h.time}</span>
+      <div style="margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${h.data.substring(0,40)}${h.data.length>40?'…':''}</div>
+    </div>`;
+  }).join('');
+}
+function restoreHistory(index) {
+  const h = DataLayer.read('qm_history', []); const item=h[index];
+  if(!item)return;
+  const inputMap = {
+    reading: {input:'reading-input', tab:'reading'},
+    task: {input:'task-input', tab:'task'},
+    flashcard: {input:'flashcard-input', tab:'flashcard'},
+    notes: {input:'notes-input', tab:'notes'},
+    tutor: {input:'tutor-input', tab:'tutor'}
+  };
+  const target = inputMap[item.type];
+  if (target) {
+    document.getElementById(target.input).value = item.data;
+    switchTab(target.tab);
+  }
+  toggleHistory();
+}
+function clearHistory() { if(confirm('确定清空？')){DataLayer.save('qm_history',[]);renderHistory();} }
+
+// ===================== ACHIEVEMENT =====================
+function getAchievements() { return DataLayer.read('qm_ach', {total:0,streak:0,words:0,tasks:0,focusMinutes:0,lastDate:''}); }
+function saveAchievements(a) { DataLayer.save('qm_ach', a); }
+function recordAchievement(type, extra) {
+  const a=getAchievements(); a.total++;
+  if(type==='reading')a.words+=extra||0; else if(type==='task')a.tasks++;
+  else if(type==='pomodoro'){ a.focusMinutes = (a.focusMinutes || 0) + (extra || 0); }
+  const today=new Date().toLocaleDateString('zh-CN');
+  if(a.lastDate!==today){
+    const yesterday=new Date(Date.now()-86400000).toLocaleDateString('zh-CN');
+    if(a.lastDate===yesterday)a.streak++; else if(a.lastDate!==today)a.streak=1;
+    a.lastDate=today;
+  }
+  saveAchievements(a); updateAchievementDisplay(); updateDashboardData();
+}
+function updateAchievementDisplay() {
+  const a=getAchievements(); if(a.total===0)return;
+  document.getElementById('achievement-section').style.display='block';
+  document.getElementById('stat-total').textContent=a.total;
+  document.getElementById('stat-streak').textContent=a.streak;
+  document.getElementById('stat-words').textContent=a.words;
+  document.getElementById('stat-tasks').textContent=a.tasks;
+  const badges=document.querySelectorAll('#badge-list .badge-i');
+  [{i:0,c:a.total>=1},{i:1,c:a.words>=1000},{i:2,c:a.tasks>=1},{i:3,c:a.streak>=2},{i:4,c:a.total>=10}]
+    .forEach(({i,c})=>{if(c){badges[i].classList.add('got');badges[i].classList.remove('lock');}});
+}
+
+// ===================== DASHBOARD =====================
+function updateDashboardData() {
+  renderDashboardOverview();
+  renderModuleBars();
+  renderFlashcardAnalysis();
+  renderHeatmap();
+  renderRecentActivity();
+}
+function renderDashboardOverview() {
+  const a = getAchievements();
+  document.getElementById('dash-total').querySelector('.dash-num').textContent = a.total || 0;
+  document.getElementById('dash-streak').querySelector('.dash-num').textContent = a.streak || 0;
+  // Today's operations
+  let todayCount = 0;
+  const h1 = DataLayer.read('qm_history', []);
+  const today = new Date().toLocaleDateString('zh-CN');
+  todayCount = h1.filter(e => e.time && e.time.startsWith(today)).length;
+  document.getElementById('dash-today').querySelector('.dash-num').textContent = todayCount;
+  document.getElementById('dash-focus').querySelector('.dash-num').textContent = a.focusMinutes || 0;
+}
+function renderModuleBars() {
+  const counts = { reading: 0, task: 0, flashcard: 0, notes: 0, tutor: 0, pomodoro: 0 };
+  const h2 = DataLayer.read('qm_history', []);
+  h2.forEach(e => { if (counts[e.type] !== undefined) counts[e.type]++; });
+  const total = Object.values(counts).reduce((a, b) => a + b, 0) || 1;
+  const mods = [
+    { key: 'reading', icon: '📖', label: '阅读', cls: 'r' },
+    { key: 'task', icon: '🎯', label: '任务', cls: 't' },
+    { key: 'flashcard', icon: '🃏', label: '闪卡', cls: 'f' },
+    { key: 'notes', icon: '📝', label: '笔记', cls: 'n' },
+    { key: 'tutor', icon: '💬', label: '答疑', cls: 'u' },
+    { key: 'pomodoro', icon: '⏱', label: '专注', cls: 'p' }
+  ];
+  const container = document.getElementById('dash-modules');
+  container.innerHTML = mods.map(m => {
+    const pct = Math.max(1, Math.round((counts[m.key] / total) * 100));
+    return `<div class="dash-mod-row">
+      <span class="dash-mod-icon">${m.icon}</span>
+      <span class="dash-mod-label">${m.label}</span>
+      <div class="dash-mod-bar-bg"><div class="dash-mod-bar ${m.cls}" style="width:${pct}%"></div></div>
+      <span class="dash-mod-count">${counts[m.key]}次</span>
+    </div>`;
+  }).join('');
+}
+function renderFlashcardAnalysis() {
+  const card = document.getElementById('dash-fc-card');
+  const content = document.getElementById('dash-fc-content');
+  const decks = DataLayer.read('qm_flashcard_decks', []);
+  if (decks.length === 0) {
+    content.innerHTML = '<p class="dash-empty">暂无闪卡数据，快去<a href="javascript:switchTab(\'flashcard\')" style="color:var(--pri);cursor:pointer;">创建知识闪卡</a>开始复习吧</p>';
+    return;
+  }
+  let totalCards = 0, mastered = 0, dueToday = 0;
+  let totalGood = 0, totalHard = 0, totalForget = 0;
+  const now = new Date();
+  decks.forEach(d => {
+    totalCards += d.cards.length;
+    d.cards.forEach(c => {
+      if (c.reps >= 3 && c.ease >= 2.5) mastered++;
+      const nr = c.nextReview ? new Date(c.nextReview) : null;
+      if (nr && nr <= now) dueToday++;
+      if (c.quality != null) {
+        if (c.quality >= 4) totalGood++;
+        else if (c.quality >= 2) totalHard++;
+        else totalForget++;
+      }
+    });
+  });
+  const total = totalGood + totalHard + totalForget || 1;
+  content.innerHTML = `
+    <div class="dash-fc-stats">
+      <div class="dash-fc-stat m"><div class="num">${mastered}</div><div class="lbl">已掌握</div></div>
+      <div class="dash-fc-stat p"><div class="num">${dueToday}</div><div class="lbl">待复习</div></div>
+      <div class="dash-fc-stat d"><div class="num">${decks.length}</div><div class="lbl">牌组数</div></div>
+    </div>
+    <div class="dash-fc-bar">
+      <div class="dash-fc-bar-row">
+        <span class="dash-fc-bar-lbl">😊 轻松</span>
+        <div class="dash-fc-bar-bg"><div class="dash-fc-bar-fill ok" style="width:${Math.round(totalGood/total*100)}%"></div></div>
+        <span class="dash-fc-bar-val">${totalGood}</span>
+      </div>
+      <div class="dash-fc-bar-row">
+        <span class="dash-fc-bar-lbl">🤔 犹豫</span>
+        <div class="dash-fc-bar-bg"><div class="dash-fc-bar-fill hm" style="width:${Math.round(totalHard/total*100)}%"></div></div>
+        <span class="dash-fc-bar-val">${totalHard}</span>
+      </div>
+      <div class="dash-fc-bar-row">
+        <span class="dash-fc-bar-lbl">😞 忘记</span>
+        <div class="dash-fc-bar-bg"><div class="dash-fc-bar-fill fr" style="width:${Math.round(totalForget/total*100)}%"></div></div>
+        <span class="dash-fc-bar-val">${totalForget}</span>
+      </div>
+    </div>`;
+}
+function renderHeatmap() {
+  const container = document.getElementById('dash-heatmap');
+  const days = ['日', '一', '二', '三', '四', '五', '六'];
+  const today = new Date();
+  // Build 7-day count map
+  const dailyMap = {};
+  const h3 = DataLayer.read('qm_history', []);
+  h3.forEach(e => {
+    if (!e.time) return;
+    const dateStr = e.time.split(' ')[0];
+    dailyMap[dateStr] = (dailyMap[dateStr] || 0) + 1;
+  });
+  // Last 7 days
+  let html = '';
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toLocaleDateString('zh-CN');
+    const count = dailyMap[dateStr] || 0;
+    let level = 'l0';
+    if (count >= 8) level = 'l4';
+    else if (count >= 5) level = 'l3';
+    else if (count >= 3) level = 'l2';
+    else if (count >= 1) level = 'l1';
+    html += `<div class="dash-heat-day">
+      <span class="dash-heat-lbl">${days[d.getDay()]}</span>
+      <div class="dash-heat-cell ${level}" title="${dateStr} · ${count}次"></div>
+      <span style="font-size:.6rem">${count}</span>
+    </div>`;
+  }
+  container.innerHTML = html;
+}
+function renderRecentActivity() {
+  const container = document.getElementById('dash-recent');
+  const h4 = DataLayer.read('qm_history', []);
+  if (h4.length === 0) {
+    container.innerHTML = '<p class="dash-empty">暂无活动记录</p>';
+    return;
+  }
+  const typeMap = { reading: '📖', task: '🎯', flashcard: '🃏', notes: '📝', tutor: '💬', pomodoro: '⏱' };
+  container.innerHTML = h4.slice(0, 8).map(e => {
+    const time = e.time ? e.time.split(' ')[1] || e.time : '';
+    const desc = (e.data || '').substring(0, 30) + ((e.data || '').length > 30 ? '…' : '');
+    return `<div class="dash-recent-item">
+      <span class="dash-recent-time">${time}</span>
+      <span>${typeMap[e.type] || '📋'}</span>
+      <span class="dash-recent-desc">${desc}</span>
+    </div>`;
+  }).join('');
+}
+// ===================== TUTORIAL =====================
+function showTutorial() { document.getElementById('tutorial-overlay').style.display='flex'; }
+function hideTutorial() { document.getElementById('tutorial-overlay').style.display='none'; try{localStorage.setItem('qm_tut','1');}catch(e){} }
+
+// ESC key handler for tutorial and focus mode
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    if (document.getElementById('tutorial-overlay')?.style.display === 'flex') hideTutorial();
+  }
+});
+
+// Click outside tutorial card to close
+document.addEventListener('click', function(e) {
+  const overlay = document.getElementById('tutorial-overlay');
+  if (overlay?.style.display === 'flex' && e.target === overlay) hideTutorial();
+});
+
+// ===================== TUTOR CHAT =====================
+function scrollChatBottom() {
+  const area = document.getElementById('chat-area');
+  setTimeout(() => { area.scrollTop = area.scrollHeight; }, 100);
+}
+function addChatMessage(role, content) {
+  const area = document.getElementById('chat-area');
+  const avatar = role === 'user' ? '👤' : '🦉';
+  const now = new Date().toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'});
+  const msg = document.createElement('div');
+  msg.className = 'chat-msg ' + role;
+  msg.innerHTML = `<div class="av">${avatar}</div><div><div class="bub">${content}</div><div class="tm">${now}</div></div>`;
+  area.appendChild(msg);
+  scrollChatBottom();
+}
+async function askTutor() {
+  const input = document.getElementById('tutor-input');
+  const question = input.value.trim();
+  if (!question) return;
+  addChatMessage('user', question);
+  input.value = '';
+  hideError('tutor-error');
+  const readingText = document.getElementById('reading-input')?.value?.trim() || '';
+  const btn = document.getElementById('btn-tutor-send');
+  btn.disabled = true; btn.textContent = '…';
+  const area = document.getElementById('chat-area');
+  const typing = document.createElement('div');
+  typing.className = 'chat-msg ast'; typing.id = 'typing-indicator';
+  typing.innerHTML = `<div class="av">🦉</div><div><div class="bub"><span class="dots"><span></span><span></span><span></span></span></div></div>`;
+  area.appendChild(typing); scrollChatBottom();
+  try {
+    const res = await fetch(API_BASE + '/api/tutor/chat', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({message:question, context:readingText})
+    });
+    document.getElementById('typing-indicator')?.remove();
+    if (!res.ok) throw new Error((await res.json().catch(()=>({}))).error || `服务器错误(${res.status})`);
+    const data = await res.json();
+    addChatMessage('assistant', data.reply);
+    saveHistory('tutor', `Q: ${question}\nA: ${data.reply}`);
+  } catch (err) {
+    document.getElementById('typing-indicator')?.remove();
+    addChatMessage('assistant', '抱歉，我暂时无法回答。请检查后端服务是否已启动。');
+    showError('tutor-error', err.message);
+  }
+  btn.disabled = false; btn.textContent = '📨 发送';
+}
+function askQuick(question) { document.getElementById('tutor-input').value = question; askTutor(); }
+
+// ===================== FLASHCARDS (SM-2 间隔重复) =====================
+// ---- Data Structures ----
+// Deck: { id, title, source, createdAt, cards:[] }
+// Card: { front, back, ease:2.5, interval:0, reps:0, nextReview:null, lastReview:null, quality:null }
+let flashcards = [], fcIndex = 0, fcKnown = [], fcUnknown = [];
+let fcMode = 'browse';            // 'browse' | 'review'
+let fcReviewQueue = [];           // 复习队列（card indices）
+let fcReviewIdx = 0;             // 复习队列当前位置
+let fcReviewSession = { total:0, good:0, hard:0, forget:0 };
+
+// ---- localStorage ----
+
+function loadDecks() { return DataLayer.read('qm_flashcard_decks', []); }
+function saveDecks(decks) { DataLayer.save('qm_flashcard_decks', decks); }
+function findActiveDeck() {
+  const decks = loadDecks();
+  return decks.find(d => d.id === (flashcards._deckId || ''));
+}
+
+// ---- Deck Management ----
+function addDeckToStorage(cards, source) {
+  const decks = loadDecks();
+  const deck = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+    title: source.replace(/[\n\r]/g, ' ').slice(0, 30) + (source.length > 30 ? '…' : ''),
+    source: source,
+    createdAt: new Date().toISOString(),
+    cards: cards.map(c => ({
+      front: c.front, back: c.back,
+      ease: 2.5, interval: 0, reps: 0,
+      nextReview: null, lastReview: null, quality: null
+    }))
+  };
+  decks.unshift(deck);
+  // Keep at most 20 decks
+  if (decks.length > 20) decks.length = 20;
+  saveDecks(decks);
+  flashcards._deckId = deck.id;
+  return deck;
+}
+function updateDeckCards(deckId, cards) {
+  const decks = loadDecks();
+  const idx = decks.findIndex(d => d.id === deckId);
+  if (idx === -1) return;
+  decks[idx].cards = cards;
+  decks[idx].updatedAt = new Date().toISOString();
+  saveDecks(decks);
+}
+function deleteDeck(deckId) {
+  let decks = loadDecks();
+  decks = decks.filter(d => d.id !== deckId);
+  saveDecks(decks);
+  if (flashcards._deckId === deckId) { flashcards = []; flashcards._deckId = null; }
+}
+
+// ---- SM-2 Algorithm (SuperMemo 2) ----
+function sm2(quality, card) {
+  // quality: 0-5 scale
+  if (quality >= 3) {
+    if (card.reps === 0) card.interval = 1;
+    else if (card.reps === 1) card.interval = 6;
+    else card.interval = Math.round(card.interval * card.ease);
+    card.reps++;
+  } else {
+    card.reps = 0;
+    card.interval = 1;
+  }
+  // Update ease factor
+  card.ease = card.ease + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+  if (card.ease < 1.3) card.ease = 1.3;
+  card.lastReview = new Date().toISOString();
+  card.nextReview = new Date(Date.now() + card.interval * 86400000).toISOString();
+  card.quality = quality;
+}
+
+// ---- Helper: count cards by schedule ----
+function getDueCards(cards) {
+  const now = Date.now();
+  return cards.filter(c => !c.nextReview || new Date(c.nextReview).getTime() <= now);
+}
+function getTomorrowCards(cards) {
+  const tomorrowStart = new Date(); tomorrowStart.setHours(24,0,0,0);
+  const tomorrowEnd = new Date(tomorrowStart.getTime() + 86400000);
+  return cards.filter(c => {
+    if (!c.nextReview) return false;
+    const t = new Date(c.nextReview).getTime();
+    return t >= tomorrowStart.getTime() && t < tomorrowEnd.getTime();
+  });
+}
+function getMasteredCards(cards) {
+  const now = Date.now();
+  return cards.filter(c => c.nextReview && c.reps >= 2 && new Date(c.nextReview).getTime() > now);
+}
+
+// ---- Load Demo ----
+function loadFlashcardDemo() {
+  document.getElementById('flashcard-input').value =
+    '教育技术是指运用现代教育理论和现代信息技术，通过对教与学过程和资源的设计、开发、利用、评价和管理，以实现教学优化的理论与实践。自适应学习系统可以根据每个学生的知识水平和学习风格提供个性化学习路径。虚拟现实技术为学生创造沉浸式学习体验。';
+}
+
+// ---- Flip Card ----
+function flipCard() { document.getElementById('flashcard').classList.toggle('flipped'); playFlipSound(); }
+
+// ---- Generate Flashcards ----
+async function generateFlashcards() {
+  const input = document.getElementById('flashcard-input').value.trim();
+  if (!input || input.length < 20) { showError('flashcard-error', '请输入至少20字的内容'); return; }
+  hideError('flashcard-error');
+  showLoading('btn-flashcard', '生成中...');
+  showGlobalProgress();
+  try {
+    const res = await fetch(API_BASE + '/api/flashcard/generate', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text:input})
+    });
+    if (!res.ok) throw new Error((await res.json().catch(()=>({}))).error || `服务器错误(${res.status})`);
+    const data = await res.json();
+    hideLoading('btn-flashcard');
+    hideGlobalProgress();
+    if (!data.cards || !Array.isArray(data.cards) || data.cards.length === 0) {
+      showError('flashcard-error', '未能生成闪卡，请尝试输入更多内容'); return;
+    }
+    // Save as new deck with SM-2 scheduling fields
+    const deck = addDeckToStorage(data.cards, input);
+    flashcards = deck.cards; flashcards._deckId = deck.id;
+    fcIndex = 0; fcMode = 'browse';
+    syncFCModeUI();
+    document.getElementById('flashcard').classList.remove('flipped');
+    renderFlashcard();
+    document.getElementById('flashcard-results').style.display = 'block';
+    document.getElementById('flashcard-results').scrollIntoView({behavior:'smooth'});
+    saveHistory('flashcard', input);
+  } catch (err) {
+    hideLoading('btn-flashcard');
+    hideGlobalProgress();
+    showError('flashcard-error', `生成失败：${err.message}`);
+  }
+}
+
+// ---- Reset UI to input ----
+function resetFlashcardUI() {
+  document.getElementById('flashcard-results').style.display = 'none';
+  document.getElementById('flashcard-input').scrollIntoView({behavior:'smooth'});
+  document.getElementById('flashcard-input').focus();
+}
+
+// ---- Render Browse Card ----
+function renderFlashcard() {
+  if (!flashcards.length) return;
+  const card = flashcards[fcIndex];
+  document.getElementById('fc-question').textContent = card.front;
+  document.getElementById('fc-answer').textContent = card.back;
+  document.getElementById('fc-counter').textContent = `${fcIndex + 1} / ${flashcards.length}`;
+  // Compute mastered vs unmastered from scheduling data
+  const now = Date.now();
+  const mastered = flashcards.filter(c => c.reps >= 2 && c.nextReview && new Date(c.nextReview).getTime() > now).length;
+  document.getElementById('fc-known').textContent = mastered;
+  document.getElementById('fc-unknown').textContent = flashcards.length - mastered;
+  document.getElementById('flashcard').classList.remove('flipped');
+  // Show schedule info for this card
+  renderCardSchedule(card);
+}
+function renderCardSchedule(card) {
+  let el = document.getElementById('fc-sched-info');
+  if (!el) {
+    el = document.createElement('div'); el.id = 'fc-sched-info'; el.className = 'fc-sched';
+    const fcBox = document.querySelector('#fc-browse-panel .fc-box');
+    if (fcBox) fcBox.after(el);
+  }
+  if (!card.lastReview) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  const nextDate = new Date(card.nextReview);
+  const now = Date.now();
+  const dayDiff = Math.ceil((nextDate.getTime() - now) / 86400000);
+  const dayText = dayDiff <= 0 ? '今天' : dayDiff === 1 ? '明天' : `${dayDiff}天后`;
+  el.innerHTML = `<span>📅 下次复习: ${dayText}</span><span>📈 间隔: ${card.interval}天</span><span>🎯 熟练度: ${card.reps}次</span>`;
+}
+
+// ---- Browse Navigation ----
+function prevCard() { if (!flashcards.length) return; fcIndex = (fcIndex - 1 + flashcards.length) % flashcards.length; renderFlashcard(); }
+function nextCard() { if (!flashcards.length) return; fcIndex = (fcIndex + 1) % flashcards.length; renderFlashcard(); }
+
+// ===== REVIEW MODE =====
+function switchFCMode(mode) {
+  fcMode = mode;
+  syncFCModeUI();
+  if (mode === 'browse') {
+    document.getElementById('fc-browse-panel').style.display = 'block';
+    document.getElementById('fc-review-panel').style.display = 'none';
+    fcIndex = 0; renderFlashcard();
+  } else {
+    document.getElementById('fc-browse-panel').style.display = 'none';
+    document.getElementById('fc-review-panel').style.display = 'block';
+    startReviewSession();
+  }
+}
+function syncFCModeUI() {
+  document.getElementById('fc-tab-browse').classList.toggle('active', fcMode === 'browse');
+  document.getElementById('fc-tab-review').classList.toggle('active', fcMode === 'review');
+}
+
+// ---- Start/Refresh Review Session ----
+function startReviewSession() {
+  if (!flashcards.length) {
+    document.getElementById('fc-dashboard').innerHTML = '';
+    document.getElementById('fc-review-content').innerHTML =
+      '<div class="fc-queue-empty"><div class="big">📭</div><div class="msg">还没有闪卡</div><div class="sub">先生成闪卡再开始复习吧</div></div>';
+    return;
+  }
+  // Build review queue from due cards
+  const dueCards = getDueCards(flashcards);
+  fcReviewQueue = [];
+  flashcards.forEach((c, i) => { if (dueCards.includes(c)) fcReviewQueue.push(i); });
+  fcReviewIdx = 0;
+  fcReviewSession = { total: fcReviewQueue.length, good: 0, hard: 0, forget: 0 };
+  renderReviewDashboard();
+  if (fcReviewQueue.length === 0) {
+    renderReviewComplete();
+  } else {
+    renderReviewCard();
+  }
+}
+
+function renderReviewDashboard() {
+  const now = Date.now();
+  const total = flashcards.length;
+  const dueCount = getDueCards(flashcards).length;
+  const tmrwCount = getTomorrowCards(flashcards).length;
+  const masteredCount = getMasteredCards(flashcards).length;
+  document.getElementById('fc-dashboard').innerHTML =
+    `<div class="fc-dash-card due"><div class="dnum">${dueCount}</div><div class="dlbl">今日待复习</div></div>
+     <div class="fc-dash-card tmrw"><div class="dnum">${tmrwCount}</div><div class="dlbl">明日到期</div></div>
+     <div class="fc-dash-card mastered"><div class="dnum">${masteredCount}</div><div class="dlbl">已掌握</div></div>`;
+}
+
+function renderReviewCard() {
+  if (fcReviewIdx >= fcReviewQueue.length) { renderReviewComplete(); return; }
+  const cardIdx = fcReviewQueue[fcReviewIdx];
+  const card = flashcards[cardIdx];
+  const container = document.getElementById('fc-review-content');
+  const progress = fcReviewQueue.length > 0 ? Math.round((fcReviewIdx / fcReviewQueue.length) * 100) : 0;
+  container.innerHTML =
+    `<div class="card">
+      <div class="fc-review-prog"><div class="fill" style="width:${progress}%"></div></div>
+      <div class="fc-review-label">📋 第 ${fcReviewIdx + 1} 张 / 共 ${fcReviewQueue.length} 张</div>
+      <div class="fc-box"><div class="fc" id="fc-review-card" onclick="flipReviewCard()">
+        <div class="fc-face fc-front"><span class="fc-lbl">问题 / 术语</span><span class="fc-q">${escapeXml(card.front)}</span></div>
+        <div class="fc-face fc-back"><span class="fc-lbl">答案 / 解释</span><span class="fc-a">${escapeXml(card.back)}</span></div>
+      </div></div>
+      <p class="fc-hint">👆 点击卡片翻转查看答案，然后选择你的掌握程度</p>
+      <div class="fc-kb-hint">
+        <span class="fc-kb">Space 翻转</span>
+        <span class="fc-kb">1 忘记了</span>
+        <span class="fc-kb">2 勉强</span>
+        <span class="fc-kb">3 掌握</span>
+      </div>
+      <div class="fc-rate-row" id="fc-rate-buttons">
+        <button class="fc-rate-btn forget" onclick="rateCard(1)">
+          <span class="ric">😞</span>忘记了<span class="rtx">完全想不起来</span>
+        </button>
+        <button class="fc-rate-btn hard" onclick="rateCard(3)">
+          <span class="ric">🤔</span>勉强想起<span class="rtx">犹豫但对了</span>
+        </button>
+        <button class="fc-rate-btn good" onclick="rateCard(5)">
+          <span class="ric">😊</span>轻松掌握<span class="rtx">立刻答出</span>
+        </button>
+      </div>
+      <div class="fc-sched" id="fc-review-sched"></div>
+    </div>`;
+}
+
+function flipReviewCard() {
+  const card = document.getElementById('fc-review-card');
+  if (card) { card.classList.toggle('flipped'); playFlipSound(); }
+}
+
+function rateCard(quality) {
+  const cardIdx = fcReviewQueue[fcReviewIdx];
+  const card = flashcards[cardIdx];
+  // Apply SM-2 algorithm
+  sm2(quality, card);
+  // Track session stats
+  if (quality >= 4) fcReviewSession.good++;
+  else if (quality >= 2) fcReviewSession.hard++;
+  else fcReviewSession.forget++;
+  // Show schedule feedback
+  const schedEl = document.getElementById('fc-review-sched');
+  if (schedEl) {
+    const nextDate = new Date(card.nextReview);
+    const now = Date.now();
+    const dayDiff = Math.ceil((nextDate.getTime() - now) / 86400000);
+    schedEl.innerHTML = `<span>📅 下次: ${dayDiff <= 0 ? '今天' : dayDiff + '天后'}</span><span>📈 间隔: ${card.interval}天</span><span>🎯 熟练: ${card.reps}次</span>`;
+  }
+  // Persist
+  updateDeckCards(flashcards._deckId, flashcards);
+  // Next card after brief delay for feedback visibility
+  setTimeout(() => {
+    fcReviewIdx++;
+    renderReviewDashboard();
+    if (fcReviewIdx >= fcReviewQueue.length) {
+      renderReviewComplete();
+    } else {
+      renderReviewCard();
+    }
+  }, 400);
+}
+
+function renderReviewComplete() {
+  const container = document.getElementById('fc-review-content');
+  const { good, hard, forget, total } = fcReviewSession;
+  const deckId = flashcards._deckId;
+  const allDue = getDueCards(flashcards).length;
+  const tmrwCount = getTomorrowCards(flashcards).length;
+  let emoji = '🎉', msg = '本轮复习完成！';
+  if (total === 0) { emoji = '✅'; msg = '暂时没有需要复习的闪卡'; }
+  container.innerHTML =
+    `<div class="fc-done">
+      <div class="big">${emoji}</div>
+      <div class="msg">${msg}</div>
+      <div class="sub">${total > 0 ? `本次: ${forget}次忘记 | ${hard}次犹豫 | ${good}次流畅 · 明天还有${tmrwCount}张到期` : '所有卡片都在按间隔重复计划进行中'}</div>
+      ${total > 0 ? `<div class="fc-done-stats">
+        <div class="fc-st kn"><div class="num">${good}</div><div class="lbl">轻松</div></div>
+        <div class="fc-st unk"><div class="num">${forget}</div><div class="lbl">忘记</div></div>
+      </div>` : ''}
+      <div style="margin-top:16px;">
+        <button class="btn btn-sec btn-sm" onclick="startReviewSession()">🔄 重新检查</button>
+        <button class="btn btn-pri btn-sm" onclick="switchFCMode('browse')" style="margin-left:6px;">📇 浏览卡片</button>
+      </div>
+      ${flashcards.length > 0 ? renderReviewDashAfter() : ''}
+    </div>`;
+}
+
+function renderReviewDashAfter() {
+  const due = getDueCards(flashcards).length;
+  const tmrw = getTomorrowCards(flashcards).length;
+  const mastered = getMasteredCards(flashcards).length;
+  return `<div class="fc-dash" style="margin-top:16px;">
+    <div class="fc-dash-card due"><div class="dnum">${due}</div><div class="dlbl">仍待复习</div></div>
+    <div class="fc-dash-card tmrw"><div class="dnum">${tmrw}</div><div class="dlbl">明日到期</div></div>
+    <div class="fc-dash-card mastered"><div class="dnum">${mastered}</div><div class="dlbl">已掌握</div></div>
+  </div>`;
+}
+
+// ---- Load deck for review from history ----
+function loadDeckForReview(deckId) {
+  const decks = loadDecks();
+  const deck = decks.find(d => d.id === deckId);
+  if (!deck) return;
+  flashcards = deck.cards; flashcards._deckId = deck.id;
+  fcIndex = 0; fcMode = 'review';
+  document.getElementById('flashcard-results').style.display = 'block';
+  syncFCModeUI();
+  document.getElementById('fc-browse-panel').style.display = 'none';
+  document.getElementById('fc-review-panel').style.display = 'block';
+  startReviewSession();
+  document.getElementById('flashcard-results').scrollIntoView({behavior:'smooth'});
+}
+
+// ===== KEYBOARD =====
+document.addEventListener('keydown', function(e) {
+  if (document.getElementById('focus-overlay')?.classList.contains('show')) return;
+  if (!document.getElementById('panel-flashcard')?.classList.contains('on')) return;
+  const isInput = document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA';
+  if (fcMode === 'browse') {
+    if (e.key === 'ArrowLeft') { e.preventDefault(); prevCard(); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); nextCard(); }
+    else if ((e.key === ' ' || e.key === 'Space') && !isInput) { e.preventDefault(); flipCard(); }
+  } else if (fcMode === 'review') {
+    if ((e.key === ' ' || e.key === 'Space') && !isInput) { e.preventDefault(); flipReviewCard(); }
+    else if (e.key === '1' && !isInput) { e.preventDefault(); if (fcReviewIdx < fcReviewQueue.length) rateCard(1); }
+    else if (e.key === '2' && !isInput) { e.preventDefault(); if (fcReviewIdx < fcReviewQueue.length) rateCard(3); }
+    else if (e.key === '3' && !isInput) { e.preventDefault(); if (fcReviewIdx < fcReviewQueue.length) rateCard(5); }
+  }
+});
+
+// ===================== NOTES =====================
+function loadNotesDemo() {
+  document.getElementById('notes-input').value =
+    '教育技术学是一门研究如何运用技术来促进学习和提高绩效的学科。它的核心理论基础包括建构主义学习理论、认知负荷理论、多媒体学习理论和联通主义学习理论。建构主义认为知识不是被动接受的而是主动建构的。认知负荷理论强调教学设计应该管理学习者的内在、外在和相关认知负荷。多媒体学习理论提出了双重通道、容量有限和主动加工三大假设。联通主义则强调在数字时代知识存在于连接之中。';
+}
+async function summarizeNotes() {
+  const input = document.getElementById('notes-input').value.trim();
+  if (!input || input.length < 20) { showError('notes-error', '请输入至少20字的内容'); return; }
+  hideError('notes-error');
+  showLoading('btn-notes', '整理中...');
+  showGlobalProgress();
+  try {
+    const res = await fetch(API_BASE + '/api/notes/summarize', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text:input})
+    });
+    if (!res.ok) throw new Error((await res.json().catch(()=>({}))).error || `服务器错误(${res.status})`);
+    const data = await res.json();
+    hideLoading('btn-notes');
+    hideGlobalProgress();
+    document.getElementById('notes-title').textContent = '📄 ' + (data.title || '学习笔记');
+    document.getElementById('notes-outline').innerHTML = (data.outline || []).map((item, i) =>
+      `<div class="ol-item"><span class="ol-num">${i + 1}</span><span>${item}</span></div>`
+    ).join('');
+    document.getElementById('notes-terms').innerHTML = (data.keyTerms || []).map(t =>
+      `<span class="term-item" onclick="this.classList.toggle('expanded')">
+        <strong>${escapeXml(t.term)}</strong>
+        <span class="term-def">：${escapeXml(t.definition)}</span>
+      </span>`
+    ).join('');
+    document.getElementById('notes-summary').textContent = data.summary ? '💡 ' + data.summary : '';
+    document.getElementById('notes-output').classList.add('show');
+    document.getElementById('notes-output').scrollIntoView({behavior:'smooth'});
+    saveHistory('notes', input);
+  } catch (err) {
+    hideLoading('btn-notes');
+    hideGlobalProgress();
+    showError('notes-error', `整理失败：${err.message}`);
+  }
+}
+function copyNotes() {
+  const title = document.getElementById('notes-title').textContent;
+  const outline = Array.from(document.querySelectorAll('.ol-item'))
+    .map((el, i) => `${i + 1}. ${el.querySelector('span:last-child').textContent}`).join('\n');
+  const terms = Array.from(document.querySelectorAll('.term-item'))
+    .map(el => `• ${el.querySelector('strong')?.textContent || ''}：${el.querySelector('.term-def')?.textContent?.replace('：','') || ''}`)
+    .filter(s => s.length > 3).join('\n') || '（暂无术语提取）';
+  const summary = document.getElementById('notes-summary').textContent;
+  const text = `${title}\n\n📌 提纲\n${outline}\n\n🔑 关键术语\n${terms}\n\n${summary}`;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('#notes-output .btn-sec');
+    if(btn){ const orig=btn.textContent; btn.textContent='✅ 已复制！'; setTimeout(()=>btn.textContent=orig,2000); }
+  }).catch(() => alert('复制失败，请手动复制'));
+}
+
+// Click outside history panel to close
+document.addEventListener('click', function(e) {
+  const panel = document.getElementById('history-panel');
+  const toggle = document.getElementById('hist-toggle-btn');
+  const bd = document.getElementById('history-backdrop');
+  if (panel?.classList.contains('open') && !panel.contains(e.target) && e.target !== toggle) {
+    panel.classList.remove('open'); bd.classList.remove('show');
+  }
+  // Close bar menu on outside click
+  const items = document.getElementById('bar-items');
+  const hamburger = document.getElementById('bar-hamburger');
+  if (items?.classList.contains('expanded') && !items.contains(e.target) && e.target !== hamburger) {
+    items.classList.remove('expanded');
+    hamburger.textContent = '☰';
+  }
+});
+
+// ===================== INIT =====================
+if ('speechSynthesis' in window) {
+  speechSynthesis.getVoices();
+  speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+}
+document.addEventListener('DOMContentLoaded', async () => {
+  await DataLayer.init();
+  loadA11y();
+  loadFontMode();
+  loadVisualMode();
+  loadReadDifficulty();
+  loadStepMode();
+  loadUserSession();
+  updateAchievementDisplay();
+  updateHistoryBadge();
+  updateDashboardData();
+  initWordPronunciation();
+  checkServerConnection();
+  // Periodic health check every 30s to recover from transient network loss
+  setInterval(checkServerConnection, 30000);
+  initMindmapScrollListeners();
+  initScrollTopButton();
+  if (!localStorage.getItem('qm_tut')) setTimeout(showTutorial, 600);
+  // Record initial activity context for welcome-back
+  recordActivityContext();
+});
+</script>
+</body>
+</html>

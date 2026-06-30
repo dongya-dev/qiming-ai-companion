@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>启明 · 登录</title>
+<style>
+:root {
+  --pri: #F26722;
+  --pri-h: #E0590E;
+  --pri-s: #FFF6F0;
+  --sec: #6366F1;
+  --ok: #10B981;
+  --bg: #F6F5F2;
+  --surf: #FFFFFF;
+  --line: #EBE8E2;
+  --tx: #1E293B;
+  --tx2: #64748B;
+  --tx3: #94A3B8;
+  --r: 18px;
+  --rs: 12px;
+}
+
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+
+body{
+  font-family:"PingFang SC","Microsoft YaHei","Noto Sans SC",-apple-system,system-ui,sans-serif;
+  background:var(--bg);
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  position:relative;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* Background */
+body::before{
+  content:'';position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 700px 500px at 20% 30%, rgba(242,103,34,.04) 0%, transparent 60%),
+    radial-gradient(ellipse 500px 400px at 75% 60%, rgba(99,102,241,.03) 0%, transparent 55%),
+    radial-gradient(ellipse 600px 450px at 50% 90%, rgba(16,185,129,.02) 0%, transparent 55%);
+}
+
+/* Floating particles */
+.particles{position:fixed;inset:0;pointer-events:none;z-index:0;}
+.particle{
+  position:absolute;border-radius:50%;
+  background:rgba(242,103,34,.06);
+  animation:float 6s ease-in-out infinite;
+}
+@keyframes float{
+  0%,100%{transform:translateY(0) translateX(0);opacity:.4;}
+  25%{transform:translateY(-20px) translateX(8px);opacity:.7;}
+  50%{transform:translateY(-10px) translateX(-6px);opacity:.5;}
+  75%{transform:translateY(-28px) translateX(-10px);opacity:.3;}
+}
+
+/* Card */
+.card{
+  position:relative;z-index:1;background:var(--surf);
+  border-radius:24px;padding:48px 40px;width:420px;max-width:92vw;
+  box-shadow:0 2px 8px rgba(0,0,0,.04),0 12px 40px rgba(0,0,0,.08);
+  border:1px solid var(--line);
+  animation:cardIn .6s cubic-bezier(.22,.61,.36,1);
+}
+@keyframes cardIn{
+  from{opacity:0;transform:translateY(30px) scale(.96);}
+  to{opacity:1;transform:translateY(0) scale(1);}
+}
+
+/* Logo */
+.logo{
+  text-align:center;margin-bottom:28px;
+}
+.logo .owl{
+  font-size:3rem;display:block;margin-bottom:4px;
+  animation:owlBounce 2s ease-in-out infinite;
+}
+@keyframes owlBounce{
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-8px);}
+}
+.logo h1{
+  font-size:1.6rem;font-weight:800;color:var(--tx);
+  background:linear-gradient(135deg,var(--pri),#F5793D,#F59059);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.logo .sub{font-size:.82rem;color:var(--tx2);margin-top:4px;}
+
+/* Tab switcher */
+.tab-row{
+  display:flex;gap:0;margin-bottom:24px;
+  background:var(--bg);border-radius:99px;padding:4px;
+  border:1px solid var(--line);
+}
+.tab-btn{
+  flex:1;padding:10px;text-align:center;border:none;background:transparent;
+  border-radius:99px;cursor:pointer;font-size:.88rem;font-weight:600;
+  color:var(--tx2);transition:all .25s;font-family:inherit;
+}
+.tab-btn.active{
+  background:var(--pri);color:#fff;
+  box-shadow:0 2px 8px rgba(242,103,34,.25);
+}
+
+/* Form */
+.field{margin-bottom:16px;}
+.field label{
+  display:block;font-size:.8rem;font-weight:600;color:var(--tx2);margin-bottom:6px;
+}
+.field input{
+  width:100%;padding:12px 16px;border:2px solid var(--line);
+  border-radius:var(--rs);font-size:.92rem;font-family:inherit;
+  transition:all .2s;background:var(--surf);color:var(--tx);
+}
+.field input:focus{
+  outline:none;border-color:var(--pri);
+  box-shadow:0 0 0 4px rgba(242,103,34,.08);
+}
+.field input::placeholder{color:var(--tx3);}
+
+/* Action buttons */
+.actions{margin-top:24px;}
+.btn{
+  width:100%;padding:13px;border-radius:99px;border:none;
+  font-size:.95rem;font-weight:700;cursor:pointer;
+  font-family:inherit;transition:all .2s;
+}
+.btn-pri{
+  background:linear-gradient(150deg,var(--pri),var(--pri-h));
+  color:#fff;box-shadow:0 3px 14px rgba(242,103,34,.2);
+}
+.btn-pri:hover{transform:translateY(-1px);box-shadow:0 5px 20px rgba(242,103,34,.3);}
+.btn-sec{
+  background:transparent;color:var(--tx2);border:2px solid var(--line);
+  margin-top:10px;
+}
+.btn-sec:hover{border-color:var(--pri);color:var(--pri);}
+
+/* Divider */
+.divider{
+  display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--tx3);font-size:.76rem;
+}
+.divider::before,.divider::after{
+  content:'';flex:1;height:1px;background:var(--line);
+}
+
+/* Status message */
+.msg{text-align:center;font-size:.8rem;margin-top:12px;min-height:20px;transition:all .3s;}
+.msg.err{color:#DC2626;}
+.msg.ok{color:#059669;}
+.msg.info{color:var(--tx3);}
+
+/* Animation helper */
+.shake{animation:shake .4s ease;}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-6px);}75%{transform:translateX(6px);}}
+
+/* Responsive */
+@media(max-width:480px){
+  .card{padding:32px 24px;border-radius:18px;}
+  .logo .owl{font-size:2.4rem;}
+  .logo h1{font-size:1.3rem;}
+}
+</style>
+</head>
+<body>
+
+<!-- Particles -->
+<div class="particles" id="particles"></div>
+
+<!-- Card -->
+<div class="card" id="card">
+  <div class="logo">
+    <span class="owl">🦉</span>
+    <h1>启明 · AI 学习伴侣</h1>
+    <p class="sub">为每一位独特的学习者，点亮前行的路</p>
+  </div>
+
+  <!-- Tab -->
+  <div class="tab-row">
+    <button class="tab-btn active" id="tab-login" onclick="switchAuthTab('login')">登录</button>
+    <button class="tab-btn" id="tab-register" onclick="switchAuthTab('register')">注册</button>
+  </div>
+
+  <!-- Login form -->
+  <form id="login-form" onsubmit="handleLogin(event)">
+    <div class="field"><label>用户名</label><input type="text" id="login-username" placeholder="请输入用户名" autocomplete="username" required></div>
+    <div class="field"><label>密码</label><input type="password" id="login-password" placeholder="请输入密码" autocomplete="current-password" required></div>
+    <div class="actions">
+      <button type="submit" class="btn btn-pri" id="btn-login">🦉 进入学习</button>
+    </div>
+  </form>
+
+  <!-- Register form -->
+  <form id="register-form" style="display:none;" onsubmit="handleRegister(event)">
+    <div class="field"><label>用户名</label><input type="text" id="reg-username" placeholder="给自己取个名字吧（3-12字）" autocomplete="off" minlength="3" maxlength="12" required></div>
+    <div class="field"><label>密码</label><input type="password" id="reg-password" placeholder="设置密码（至少4位）" autocomplete="new-password" minlength="4" required></div>
+    <div class="field"><label>你的角色</label>
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <label style="flex:1;display:flex;align-items:center;gap:6px;padding:8px 12px;border:2px solid var(--line);border-radius:var(--rs);cursor:pointer;font-size:.82rem;transition:all .2s;" id="role-student-label"><input type="radio" name="role" value="student" checked onchange="updateRoleUI()"> 🎒 学生</label>
+        <label style="flex:1;display:flex;align-items:center;gap:6px;padding:8px 12px;border:2px solid var(--line);border-radius:var(--rs);cursor:pointer;font-size:.82rem;transition:all .2s;" id="role-teacher-label"><input type="radio" name="role" value="teacher" onchange="updateRoleUI()"> 📚 教师</label>
+      </div>
+    </div>
+    <div class="actions">
+      <button type="submit" class="btn btn-pri" id="btn-register">✨ 创建账户</button>
+    </div>
+  </form>
+
+  <div class="divider">或</div>
+
+  <button class="btn btn-sec" id="btn-guest" onclick="loginAsGuest()" style="margin-top:0;">👋 游客体验</button>
+
+  <div class="msg" id="msg"></div>
+</div>
+
+<script>
+// ===================== Particles =====================
+(function(){
+  const container = document.getElementById('particles');
+  for(let i=0;i<18;i++){
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = 10 + Math.random()*30;
+    p.style.width = size+'px';
+    p.style.height = size+'px';
+    p.style.left = Math.random()*100+'%';
+    p.style.top = Math.random()*100+'%';
+    p.style.animationDelay = Math.random()*6+'s';
+    p.style.animationDuration = (5+Math.random()*7)+'s';
+    container.appendChild(p);
+  }
+})();
+
+// ===================== Auth State =====================
+let authTab = 'login';
+
+function switchAuthTab(tab){
+  authTab = tab;
+  document.getElementById('tab-login').classList.toggle('active', tab==='login');
+  document.getElementById('tab-register').classList.toggle('active', tab==='register');
+  document.getElementById('login-form').style.display = tab==='login' ? '' : 'none';
+  document.getElementById('register-form').style.display = tab==='register' ? '' : 'none';
+  clearMsg();
+}
+
+function updateRoleUI(){
+  const sel = document.querySelector('input[name="role"]:checked');
+  const st = document.getElementById('role-student-label');
+  const te = document.getElementById('role-teacher-label');
+  st.style.borderColor = sel.value==='student' ? 'var(--pri)' : 'var(--line)';
+  te.style.borderColor = sel.value==='teacher' ? 'var(--pri)' : 'var(--line)';
+  st.style.background = sel.value==='student' ? 'var(--pri-s)' : '';
+  te.style.background = sel.value==='teacher' ? 'var(--pri-s)' : '';
+}
+
+// ===================== Msg =====================
+function showMsg(text, type){
+  const m = document.getElementById('msg');
+  m.textContent = text;
+  m.className = 'msg '+type;
+  if(type==='err'){ document.getElementById('card').classList.add('shake'); setTimeout(()=>document.getElementById('card').classList.remove('shake'),400); }
+}
+function clearMsg(){ const m=document.getElementById('msg');m.textContent='';m.className='msg'; }
+
+// ===================== API 调用 =====================
+const API_BASE = ''; // 同源调用
+
+async function apiCall(path, body) {
+  const resp = await fetch(API_BASE + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  return await resp.json();
+}
+
+// ===================== Login（调用飞书后端） =====================
+async function handleLogin(e){
+  e.preventDefault();
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value.trim();
+
+  if(!username||!password){ showMsg('请填写用户名和密码','err');return; }
+  clearMsg();
+
+  const btn = document.getElementById('btn-login');
+  btn.disabled = true; btn.textContent = '登录中…';
+
+  try {
+    const result = await apiCall('/api/auth/login', { username, password });
+    if (result.ok) {
+      showMsg('登录成功！','ok');
+      loginSuccess(result.username, result.role, false, result.token);
+    } else {
+      showMsg(result.error || '登录失败','err');
+    }
+  } catch(e) {
+    showMsg('网络连接失败，请检查服务器','err');
+  } finally {
+    btn.disabled = false; btn.textContent = '🦉 进入学习';
+  }
+}
+
+// ===================== Register（调用飞书后端） =====================
+async function handleRegister(e){
+  e.preventDefault();
+  const username = document.getElementById('reg-username').value.trim();
+  const password = document.getElementById('reg-password').value.trim();
+  const roleEl = document.querySelector('input[name="role"]:checked');
+  const role = roleEl ? roleEl.value : 'student';
+
+  if(username.length<3){ showMsg('用户名至少3个字','err');return; }
+  if(username.length>12){ showMsg('用户名最多12个字','err');return; }
+  if(password.length<4){ showMsg('密码至少4位','err');return; }
+  if(!/^[\w\u4e00-\u9fff]{3,12}$/.test(username)){ showMsg('用户名只能包含中文、字母、数字或下划线','err');return; }
+  clearMsg();
+
+  const btn = document.getElementById('btn-register');
+  btn.disabled = true; btn.textContent = '注册中…';
+
+  try {
+    const result = await apiCall('/api/auth/register', { username, password, role });
+    if (result.ok) {
+      showMsg('注册成功！正在进入…','ok');
+      setTimeout(() => loginSuccess(result.username, result.role, false, result.token), 800);
+    } else {
+      showMsg(result.error || '注册失败','err');
+    }
+  } catch(e) {
+    showMsg('网络连接失败，请检查服务器','err');
+  } finally {
+    btn.disabled = false; btn.textContent = '✨ 创建账户';
+  }
+}
+
+// ===================== Guest（调用后端生成游客） =====================
+async function loginAsGuest(){
+  const btn = document.getElementById('btn-guest');
+  btn.disabled = true; btn.textContent = '进入中…';
+
+  try {
+    const result = await apiCall('/api/auth/guest', {});
+    if (result.ok) {
+      loginSuccess(result.username, result.role, true, result.token);
+    } else {
+      showMsg('游客模式暂不可用','err');
+    }
+  } catch(e) {
+    showMsg('网络连接失败','err');
+  } finally {
+    btn.disabled = false; btn.textContent = '游客模式';
+  }
+}
+
+// ===================== Success =====================
+function loginSuccess(username, role, isGuest=false, token=''){
+  // 存储到 localStorage（前端保持兼容），同时存储 token 供 API 调用
+  const session = {
+    username,
+    role,
+    isGuest,
+    token,
+    loginAt: new Date().toISOString()
+  };
+  try { localStorage.setItem('qm_session', JSON.stringify(session)); } catch(e) {}
+
+  // Animation then redirect
+  const btn = document.activeElement;
+  if(btn && btn.tagName === 'BUTTON' && !isGuest) {
+    btn.textContent = '✅ 欢迎回来！';
+    btn.style.background = 'linear-gradient(150deg, var(--ok), #059669)';
+  }
+  setTimeout(() => { window.location.href = 'index.html'; }, 600);
+}
+
+// ===================== Init =====================
+updateRoleUI();
+
+// Check if already logged in
+(function(){
+  try{
+    const s = JSON.parse(localStorage.getItem('qm_session'));
+    if(s && s.username && s.loginAt){
+      const age = Date.now() - new Date(s.loginAt).getTime();
+      if(age < 86400000){
+        document.getElementById('login-username').value = s.username;
+        showMsg('检测到上次登录，欢迎回来！','info');
+      }
+    }
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

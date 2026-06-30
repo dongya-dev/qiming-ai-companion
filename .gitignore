@@ -1,0 +1,7 @@
+node_modules/
+server.log
+*.log
+.DS_Store
+report_unpacked/
+report2_unpacked/
+pdf_text.txt
