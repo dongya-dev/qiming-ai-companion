@@ -7,7 +7,11 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ---------- config ----------
-const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY || 'sk-5d189e48ed4949e49fddf8293395f37f';
+const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY;
+if (!DEEPSEEK_KEY) {
+  console.error('❌ 缺少环境变量 DEEPSEEK_API_KEY，请设置后重启服务');
+  process.exit(1);
+}
 const DEEPSEEK_URL = 'https://api.deepseek.com/v1/chat/completions';
 
 // ---------- middleware ----------
@@ -137,8 +141,8 @@ function generateLocalMindmap(text) {
 }
 
 // ---------- 豆包 TTS (火山引擎语音合成 - HTTP Chunked) ----------
-const DOUBAO_APP_ID = process.env.DOUBAO_APP_ID || '5535821069';
-const DOUBAO_ACCESS_KEY = process.env.DOUBAO_ACCESS_KEY || 'gXldwo6u5-JGrhKDh2S4kGKq4JwWGvvN';
+const DOUBAO_APP_ID = process.env.DOUBAO_APP_ID || '';
+const DOUBAO_ACCESS_KEY = process.env.DOUBAO_ACCESS_KEY || '';
 const DOUBAO_RESOURCE_ID = 'seed-tts-2.0';
 const DOUBAO_TTS_URL = 'https://openspeech.bytedance.com/api/v3/tts/unidirectional';
 
@@ -633,9 +637,9 @@ app.post('/api/notes/summarize', async (req, res) => {
 
 // ==================== 飞书多维表格云端存储 ====================
 const FEISHU = {
-  APP_ID: process.env.FEISHU_APP_ID || 'cli_aac9c3e072249ce8',
-  APP_SECRET: process.env.FEISHU_APP_SECRET || 'peRMI1VmjEaIWqQxQDqZcbTitcpat6QD',
-  BASE_TOKEN: process.env.FEISHU_BASE_TOKEN || 'BDCtwbHnJiFTl2ke2NXcTxcLnoe',
+  APP_ID: process.env.FEISHU_APP_ID || '',
+  APP_SECRET: process.env.FEISHU_APP_SECRET || '',
+  BASE_TOKEN: process.env.FEISHU_BASE_TOKEN || '',
   USER_ID: 'default',
   TABLES: {
     achievements: 'tblxlGB3DRj1BoYK',
