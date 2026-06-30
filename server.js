@@ -1038,7 +1038,7 @@ app.listen(PORT, () => {
   console.log(`   本地访问: http://localhost:${PORT}`);
   console.log(`   API代理: DeepSeek Chat + 豆包 TTS`);
   if (!process.env.DEEPSEEK_API_KEY) {
-    console.warn(`   ⚠ 未设置 DEEPSEEK_API_KEY 环境变量，使用默认Key（可能受限）`);
+    console.warn(`   ⚠ 未设置 DEEPSEEK_API_KEY 环境变量，AI功能将不可用`);
     console.warn(`   💡 设置方式: set DEEPSEEK_API_KEY=你的Key 或 export DEEPSEEK_API_KEY=你的Key`);
   }
   console.log(`   端点: 阅读简化 | 思维导图 | 任务拆解 | AI答疑 | 闪卡 | 笔记 | 语音合成 | 飞书云同步`);
