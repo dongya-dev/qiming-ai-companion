@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const crypto = require('crypto');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -737,6 +738,46 @@ function verifyToken(token) {
   } catch (e) { return null; }
 }
 
+// ── 本地用户存储（无飞书时的兜底方案） ──
+const USERS_FILE = path.join(__dirname, 'users.json');
+
+function localLoadUsers() {
+  try {
+    if (fs.existsSync(USERS_FILE)) {
+      const raw = fs.readFileSync(USERS_FILE, 'utf8');
+      return JSON.parse(raw);
+    }
+  } catch (e) {
+    console.error('[LocalStore] 读取 users.json 失败:', e.message);
+  }
+  return [];
+}
+
+function localSaveUsers(users) {
+  try {
+    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
+  } catch (e) {
+    console.error('[LocalStore] 写入 users.json 失败:', e.message);
+    throw new Error('用户数据保存失败');
+  }
+}
+
+function localFindUser(username) {
+  const users = localLoadUsers();
+  return users.find(u => u.username === username) || null;
+}
+
+function localCreateUser(username, passwordHash, role) {
+  const users = localLoadUsers();
+  users.push({
+    username,
+    password_hash: passwordHash,
+    role,
+    created_at: new Date().toISOString()
+  });
+  localSaveUsers(users);
+}
+
 // ── 用户表 CRUD ──
 async function fsFindUser(username) {
   const records = await fsListRecords('users');
@@ -757,23 +798,27 @@ async function fsCreateUser(username, passwordHash, role) {
 // ── 注册 ──
 app.post('/api/auth/register', async (req, res) => {
   try {
-    if (!feishuConfigured()) {
-      return res.status(503).json({ error: '用户注册功能未配置（缺少飞书多维表格凭证）。请使用游客模式，或联系管理员设置 FEISHU_APP_ID / FEISHU_APP_SECRET / FEISHU_BASE_TOKEN' });
-    }
     const { username, password, role } = req.body;
     if (!username || !password) return res.status(400).json({ error: '用户名和密码不能为空' });
     if (username.length < 3 || username.length > 12) return res.status(400).json({ error: '用户名需3-12个字符' });
     if (password.length < 4) return res.status(400).json({ error: '密码至少4位' });
     if (!/^[\w\u4e00-\u9fff]{3,12}$/.test(username)) return res.status(400).json({ error: '用户名只能包含中文、字母、数字或下划线' });
 
-    const ex = await fsFindUser(username);
+    // 优先使用飞书云存储，否则使用本地文件存储
+    const useFeishu = feishuConfigured();
+
+    const ex = useFeishu ? await fsFindUser(username) : localFindUser(username);
     if (ex) return res.status(409).json({ error: '该用户名已被注册' });
 
     const hashed = hashPassword(password);
-    await fsCreateUser(username, hashed, role || '学生');
+    if (useFeishu) {
+      await fsCreateUser(username, hashed, role || '学生');
+    } else {
+      localCreateUser(username, hashed, role || '学生');
+    }
     const token = createToken(username);
 
-    console.log(`✅ 新用户注册: ${username} (${role || '学生'})`);
+    console.log(`✅ 新用户注册: ${username} (${role || '学生'}) [${useFeishu ? '飞书' : '本地'}]`);
     res.json({ ok: true, username, role: role || '学生', token });
   } catch (err) {
     console.error('[Auth/Register]', err.message);
@@ -784,24 +829,33 @@ app.post('/api/auth/register', async (req, res) => {
 // ── 登录 ──
 app.post('/api/auth/login', async (req, res) => {
   try {
-    if (!feishuConfigured()) {
-      return res.status(503).json({ error: '用户登录功能未配置（缺少飞书多维表格凭证）。请使用游客模式，或联系管理员设置 FEISHU_APP_ID / FEISHU_APP_SECRET / FEISHU_BASE_TOKEN' });
-    }
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: '请填写用户名和密码' });
 
-    const user = await fsFindUser(username);
-    if (!user) return res.status(401).json({ error: '用户不存在' });
+    // 优先使用飞书云存储，否则使用本地文件存储
+    const useFeishu = feishuConfigured();
 
-    const F = FEISHU.USER_FIELDS;
-    if (!verifyPassword(password, user.fields[F.password_hash])) {
-      return res.status(401).json({ error: '密码错误' });
+    let role = '学生';
+    if (useFeishu) {
+      const user = await fsFindUser(username);
+      if (!user) return res.status(401).json({ error: '用户不存在' });
+      const F = FEISHU.USER_FIELDS;
+      if (!verifyPassword(password, user.fields[F.password_hash])) {
+        return res.status(401).json({ error: '密码错误' });
+      }
+      role = user.fields[F.role] || '学生';
+    } else {
+      const user = localFindUser(username);
+      if (!user) return res.status(401).json({ error: '用户不存在' });
+      if (!verifyPassword(password, user.password_hash)) {
+        return res.status(401).json({ error: '密码错误' });
+      }
+      role = user.role || '学生';
     }
 
-    const role = user.fields[F.role] || '学生';
     const token = createToken(username);
 
-    console.log(`🔑 用户登录: ${username} (${role})`);
+    console.log(`🔑 用户登录: ${username} (${role}) [${useFeishu ? '飞书' : '本地'}]`);
     res.json({ ok: true, username, role, token });
   } catch (err) {
     console.error('[Auth/Login]', err.message);
@@ -811,20 +865,32 @@ app.post('/api/auth/login', async (req, res) => {
 
 // ── 验证令牌 ──
 app.post('/api/auth/verify', async (req, res) => {
-  if (!feishuConfigured()) {
-    return res.status(503).json({ error: '用户认证服务未配置' });
-  }
   const { token } = req.body;
   if (!token) return res.status(400).json({ error: '缺少认证令牌' });
 
   const username = verifyToken(token);
   if (!username) return res.status(401).json({ error: '令牌无效或已过期' });
 
+  // 优先使用飞书云存储查询用户角色
+  const useFeishu = feishuConfigured();
+
   try {
-    const user = await fsFindUser(username);
-    if (!user) return res.status(401).json({ error: '用户不存在' });
-    const F = FEISHU.USER_FIELDS;
-    res.json({ ok: true, username, role: user.fields[F.role] || '学生' });
+    let role = '学生';
+    if (useFeishu) {
+      const user = await fsFindUser(username);
+      if (!user) return res.status(401).json({ error: '用户不存在' });
+      const F = FEISHU.USER_FIELDS;
+      role = user.fields[F.role] || '学生';
+    } else {
+      const user = localFindUser(username);
+      // 本地存储允许游客令牌通过（游客用户名在本地库中不存在是正常的）
+      if (!user) {
+        // 可能是游客或未注册用户，通过令牌本身认证
+        return res.json({ ok: true, username, role: '学生', isGuest: true });
+      }
+      role = user.role || '学生';
+    }
+    res.json({ ok: true, username, role });
   } catch (err) {
     res.status(500).json({ error: '验证失败' });
   }
