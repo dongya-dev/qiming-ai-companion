@@ -7,11 +7,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ---------- config ----------
-const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY;
-if (!DEEPSEEK_KEY) {
-  console.error('❌ 缺少环境变量 DEEPSEEK_API_KEY，请设置后重启服务');
-  process.exit(1);
-}
+const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY || '';
 const DEEPSEEK_URL = 'https://api.deepseek.com/v1/chat/completions';
 
 // ---------- middleware ----------
@@ -23,6 +19,11 @@ app.use(express.static(__dirname));
 
 /** Call DeepSeek chat API with retry */
 async function deepseek(messages, temperature = 0.5, maxTokens = 3000, retries = 1) {
+  if (!DEEPSEEK_KEY) {
+    const err = new Error('DeepSeek API Key 未配置，请在环境变量中设置 DEEPSEEK_API_KEY');
+    err.status = 503;
+    throw err;
+  }
   let lastError;
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
@@ -278,6 +279,9 @@ app.post('/api/speech', async (req, res) => {
     }
     if (text.length > 500) {
       return res.status(400).json({ error: '文本过长，单次最多500字' });
+    }
+    if (!DOUBAO_APP_ID || !DOUBAO_ACCESS_KEY) {
+      return res.status(503).json({ error: '语音合成服务未配置（缺少豆包API凭证），请联系管理员设置 DOUBAO_APP_ID 和 DOUBAO_ACCESS_KEY' });
     }
 
     console.log(`🔊 TTS 合成: "${text.slice(0, 40)}${text.length > 40 ? '…' : ''}" (${text.length}字)`);
@@ -657,6 +661,11 @@ const FEISHU = {
   }
 };
 
+/** 飞书服务是否已配置（三项凭证缺一不可） */
+function feishuConfigured() {
+  return !!(FEISHU.APP_ID && FEISHU.APP_SECRET && FEISHU.BASE_TOKEN);
+}
+
 // ── 认证密钥（HMAC签名用） ──
 const AUTH_SECRET = 'qiming_edu_auth_2026_secret_key';
 
@@ -747,6 +756,9 @@ async function fsCreateUser(username, passwordHash, role) {
 // ── 注册 ──
 app.post('/api/auth/register', async (req, res) => {
   try {
+    if (!feishuConfigured()) {
+      return res.status(503).json({ error: '用户注册功能未配置（缺少飞书多维表格凭证）。请使用游客模式，或联系管理员设置 FEISHU_APP_ID / FEISHU_APP_SECRET / FEISHU_BASE_TOKEN' });
+    }
     const { username, password, role } = req.body;
     if (!username || !password) return res.status(400).json({ error: '用户名和密码不能为空' });
     if (username.length < 3 || username.length > 12) return res.status(400).json({ error: '用户名需3-12个字符' });
@@ -771,6 +783,9 @@ app.post('/api/auth/register', async (req, res) => {
 // ── 登录 ──
 app.post('/api/auth/login', async (req, res) => {
   try {
+    if (!feishuConfigured()) {
+      return res.status(503).json({ error: '用户登录功能未配置（缺少飞书多维表格凭证）。请使用游客模式，或联系管理员设置 FEISHU_APP_ID / FEISHU_APP_SECRET / FEISHU_BASE_TOKEN' });
+    }
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: '请填写用户名和密码' });
 
@@ -795,6 +810,9 @@ app.post('/api/auth/login', async (req, res) => {
 
 // ── 验证令牌 ──
 app.post('/api/auth/verify', async (req, res) => {
+  if (!feishuConfigured()) {
+    return res.status(503).json({ error: '用户认证服务未配置' });
+  }
   const { token } = req.body;
   if (!token) return res.status(400).json({ error: '缺少认证令牌' });
 
@@ -976,6 +994,9 @@ function getHandlers(userId) {
 // POST /api/sync/save  — 保存单键数据（按当前用户）
 app.post('/api/sync/save', async (req, res) => {
   try {
+    if (!feishuConfigured()) {
+      return res.status(503).json({ error: '云同步未配置（缺少飞书凭证）' });
+    }
     const userId = extractUserId(req);
     const { key, data } = req.body;
     const handlers = getHandlers(userId);
@@ -992,6 +1013,9 @@ app.post('/api/sync/save', async (req, res) => {
 // POST /api/sync/load  — 加载单键数据（按当前用户）
 app.post('/api/sync/load', async (req, res) => {
   try {
+    if (!feishuConfigured()) {
+      return res.status(503).json({ error: '云同步未配置（缺少飞书凭证）' });
+    }
     const userId = extractUserId(req);
     const { key } = req.body;
     const handlers = getHandlers(userId);
@@ -1007,6 +1031,9 @@ app.post('/api/sync/load', async (req, res) => {
 // POST /api/sync/load-all  — 一次性加载全部数据（按当前用户）
 app.post('/api/sync/load-all', async (req, res) => {
   try {
+    if (!feishuConfigured()) {
+      return res.status(503).json({ error: '云同步未配置（缺少飞书凭证）' });
+    }
     const userId = extractUserId(req);
     const handlers = getHandlers(userId);
     const result = {};
@@ -1025,8 +1052,10 @@ app.post('/api/sync/load-all', async (req, res) => {
 app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
-    model: 'deepseek-chat',
-    sync: 'feishu-bitable',
+    model: DEEPSEEK_KEY ? 'deepseek-chat' : 'unavailable',
+    tts: (DOUBAO_APP_ID && DOUBAO_ACCESS_KEY) ? 'doubao-tts' : 'unavailable',
+    sync: feishuConfigured() ? 'feishu-bitable' : 'unavailable',
+    auth: feishuConfigured() ? 'feishu-bitable' : 'guest-only',
     endpoints: ['simplify', 'mindmap', 'task-break', 'tutor-chat', 'flashcard', 'notes', 'speech', 'sync', 'auth'],
     timestamp: new Date().toISOString()
   });
@@ -1036,10 +1065,20 @@ app.get('/api/health', (_req, res) => {
 app.listen(PORT, () => {
   console.log('🦉 启明 AI学习伴侣 服务已启动');
   console.log(`   本地访问: http://localhost:${PORT}`);
-  console.log(`   API代理: DeepSeek Chat + 豆包 TTS`);
-  if (!process.env.DEEPSEEK_API_KEY) {
-    console.warn(`   ⚠ 未设置 DEEPSEEK_API_KEY 环境变量，AI功能将不可用`);
-    console.warn(`   💡 设置方式: set DEEPSEEK_API_KEY=你的Key 或 export DEEPSEEK_API_KEY=你的Key`);
+  if (DEEPSEEK_KEY) {
+    console.log(`   🤖 DeepSeek AI: 已配置 ✅`);
+  } else {
+    console.warn(`   ⚠ DeepSeek AI: 未配置 ❌ (设置 DEEPSEEK_API_KEY 后重启)`);
   }
-  console.log(`   端点: 阅读简化 | 思维导图 | 任务拆解 | AI答疑 | 闪卡 | 笔记 | 语音合成 | 飞书云同步`);
+  if (DOUBAO_APP_ID && DOUBAO_ACCESS_KEY) {
+    console.log(`   🔊 豆包 TTS: 已配置 ✅`);
+  } else {
+    console.warn(`   ⚠ 豆包 TTS: 未配置 ⚠ (语音朗读不可用)`);
+  }
+  if (feishuConfigured()) {
+    console.log(`   ☁ 飞书云同步: 已配置 ✅`);
+  } else {
+    console.warn(`   ⚠ 飞书云同步: 未配置 ⚠ (注册/登录/云端存储不可用，游客模式正常)`);
+  }
+  console.log(`   端点: 阅读简化 | 思维导图 | 任务拆解 | AI答疑 | 闪卡 | 笔记 | 语音合成 | 飞书云同步 | 用户认证`);
 });
