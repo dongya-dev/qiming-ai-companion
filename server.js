@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const crypto = require('crypto');
-const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -738,44 +737,20 @@ function verifyToken(token) {
   } catch (e) { return null; }
 }
 
-// ── 本地用户存储（无飞书时的兜底方案） ──
-const USERS_FILE = path.join(__dirname, 'users.json');
-
-function localLoadUsers() {
-  try {
-    if (fs.existsSync(USERS_FILE)) {
-      const raw = fs.readFileSync(USERS_FILE, 'utf8');
-      return JSON.parse(raw);
-    }
-  } catch (e) {
-    console.error('[LocalStore] 读取 users.json 失败:', e.message);
-  }
-  return [];
-}
-
-function localSaveUsers(users) {
-  try {
-    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
-  } catch (e) {
-    console.error('[LocalStore] 写入 users.json 失败:', e.message);
-    throw new Error('用户数据保存失败');
-  }
-}
+// ── 内存用户存储（无飞书时的兜底方案，适配 Cyclic.sh 等 serverless 平台） ──
+const memoryUsers = [];
 
 function localFindUser(username) {
-  const users = localLoadUsers();
-  return users.find(u => u.username === username) || null;
+  return memoryUsers.find(u => u.username === username) || null;
 }
 
 function localCreateUser(username, passwordHash, role) {
-  const users = localLoadUsers();
-  users.push({
+  memoryUsers.push({
     username,
     password_hash: passwordHash,
     role,
     created_at: new Date().toISOString()
   });
-  localSaveUsers(users);
 }
 
 // ── 用户表 CRUD ──
@@ -1119,11 +1094,14 @@ app.post('/api/sync/load-all', async (req, res) => {
 app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
+    platform: 'Cyclic.sh (serverless)',
+    storage: feishuConfigured() ? 'feishu-bitable' : 'in-memory (users lost on restart)',
     model: DEEPSEEK_KEY ? 'deepseek-chat' : 'unavailable',
     tts: (DOUBAO_APP_ID && DOUBAO_ACCESS_KEY) ? 'doubao-tts' : 'unavailable',
     sync: feishuConfigured() ? 'feishu-bitable' : 'unavailable',
-    auth: feishuConfigured() ? 'feishu-bitable' : 'guest-only',
+    auth: 'available (飞书优先, 内存兜底)',
     endpoints: ['simplify', 'mindmap', 'task-break', 'tutor-chat', 'flashcard', 'notes', 'speech', 'sync', 'auth'],
+    userCount: memoryUsers.length,
     timestamp: new Date().toISOString()
   });
 });
@@ -1134,21 +1112,23 @@ app.use(express.static(__dirname));
 // ---------- start ----------
 app.listen(PORT, () => {
   console.log('🦉 启明 AI学习伴侣 服务已启动');
+  console.log(`   平台: Cyclic.sh (serverless)`);
   console.log(`   本地访问: http://localhost:${PORT}`);
   if (DEEPSEEK_KEY) {
     console.log(`   🤖 DeepSeek AI: 已配置 ✅`);
   } else {
-    console.warn(`   ⚠ DeepSeek AI: 未配置 ❌ (设置 DEEPSEEK_API_KEY 后重启)`);
+    console.warn(`   ⚠ DeepSeek AI: 未配置 ❌ (请在 Cyclic.sh 环境变量中设置 DEEPSEEK_API_KEY)`);
   }
   if (DOUBAO_APP_ID && DOUBAO_ACCESS_KEY) {
     console.log(`   🔊 豆包 TTS: 已配置 ✅`);
   } else {
-    console.warn(`   ⚠ 豆包 TTS: 未配置 ⚠ (语音朗读不可用)`);
+    console.warn(`   ⚠ 豆包 TTS: 未配置 ⚠ (请在 Cyclic.sh 环境变量中设置 DOUBAO_APP_ID / DOUBAO_ACCESS_KEY)`);
   }
   if (feishuConfigured()) {
     console.log(`   ☁ 飞书云同步: 已配置 ✅`);
   } else {
-    console.warn(`   ⚠ 飞书云同步: 未配置 ⚠ (注册/登录/云端存储不可用，游客模式正常)`);
+    console.warn(`   ⚠ 飞书云同步: 未配置 ⚠ (请在 Cyclic.sh 环境变量中设置 FEISHU_APP_ID / FEISHU_APP_SECRET / FEISHU_BASE_TOKEN)`);
+    console.log(`   💾 用户存储: 内存模式 (serverless 重启后数据清空，游客模式始终可用)`);
   }
   console.log(`   端点: 阅读简化 | 思维导图 | 任务拆解 | AI答疑 | 闪卡 | 笔记 | 语音合成 | 飞书云同步 | 用户认证`);
 });
