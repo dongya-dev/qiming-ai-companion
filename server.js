@@ -2,12 +2,13 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const crypto = require('crypto');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ---------- config ----------
-const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY || '';
+const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY || 'sk-5d189e48ed4949e49fddf8293395f37f';
 const DEEPSEEK_URL = 'https://api.deepseek.com/v1/chat/completions';
 
 // ---------- middleware ----------
@@ -143,8 +144,8 @@ function generateLocalMindmap(text) {
 }
 
 // ---------- 豆包 TTS (火山引擎语音合成 - HTTP Chunked) ----------
-const DOUBAO_APP_ID = process.env.DOUBAO_APP_ID || '';
-const DOUBAO_ACCESS_KEY = process.env.DOUBAO_ACCESS_KEY || '';
+const DOUBAO_APP_ID = process.env.DOUBAO_APP_ID || '5535821069';
+const DOUBAO_ACCESS_KEY = process.env.DOUBAO_ACCESS_KEY || 'gXldwo6u5-JGrhKDh2S4kGKq4JwWGvvN';
 const DOUBAO_RESOURCE_ID = 'seed-tts-2.0';
 const DOUBAO_TTS_URL = 'https://openspeech.bytedance.com/api/v3/tts/unidirectional';
 
@@ -642,9 +643,9 @@ app.post('/api/notes/summarize', async (req, res) => {
 
 // ==================== 飞书多维表格云端存储 ====================
 const FEISHU = {
-  APP_ID: process.env.FEISHU_APP_ID || '',
-  APP_SECRET: process.env.FEISHU_APP_SECRET || '',
-  BASE_TOKEN: process.env.FEISHU_BASE_TOKEN || '',
+  APP_ID: process.env.FEISHU_APP_ID || 'cli_aac9c3e072249ce8',
+  APP_SECRET: process.env.FEISHU_APP_SECRET || 'peRMI1VmjEaIWqQxQDqZcbTitcpat6QD',
+  BASE_TOKEN: process.env.FEISHU_BASE_TOKEN || 'BDCtwbHnJiFTl2ke2NXcTxcLnoe',
   USER_ID: 'default',
   TABLES: {
     achievements: 'tblxlGB3DRj1BoYK',
@@ -737,20 +738,50 @@ function verifyToken(token) {
   } catch (e) { return null; }
 }
 
-// ── 内存用户存储（无飞书时的兜底方案，适配 Cyclic.sh 等 serverless 平台） ──
+// ── 混合用户存储（文件优先 + 内存兜底） ──
+const USERS_FILE = path.join(__dirname, 'users.json');
 const memoryUsers = [];
 
+function fileStoreLoad() {
+  try {
+    if (fs.existsSync(USERS_FILE)) {
+      return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+    }
+  } catch (e) { console.error('[Store] 读取文件失败:', e.message); }
+  return null;
+}
+
+function fileStoreSave(users) {
+  try {
+    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
+    return true;
+  } catch (e) {
+    console.error('[Store] 写入文件失败（可能为 serverless 平台）:', e.message);
+    return false;
+  }
+}
+
 function localFindUser(username) {
+  // 文件存储优先
+  const fileUsers = fileStoreLoad();
+  if (fileUsers) return fileUsers.find(u => u.username === username) || null;
+  // 兜底：内存存储
   return memoryUsers.find(u => u.username === username) || null;
 }
 
 function localCreateUser(username, passwordHash, role) {
-  memoryUsers.push({
-    username,
-    password_hash: passwordHash,
-    role,
-    created_at: new Date().toISOString()
-  });
+  const user = { username, password_hash: passwordHash, role, created_at: new Date().toISOString() };
+
+  // 文件存储优先
+  const fileUsers = fileStoreLoad();
+  if (fileUsers) {
+    fileUsers.push(user);
+    if (fileStoreSave(fileUsers)) return;
+  }
+
+  // 兜底：内存存储
+  memoryUsers.push(user);
+  console.log('[Store] 使用内存存储（文件系统不可写，用户数据重启后清空）');
 }
 
 // ── 用户表 CRUD ──
